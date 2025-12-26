@@ -1,0 +1,88 @@
+# Workflow Status Template
+
+# This tracks progress through BMM methodology Analysis, Planning, and Solutioning phases.
+# Implementation phase is tracked separately in sprint-status.yaml
+
+# STATUS DEFINITIONS:
+# ==================
+# Initial Status (before completion):
+#   - required: Must be completed to progress
+#   - optional: Can be completed but not required
+#   - recommended: Strongly suggested but not required
+#   - conditional: Required only if certain conditions met (e.g., if_has_ui)
+#
+# Completion Status:
+#   - {file-path}: File created/found (e.g., "docs/product-brief.md")
+#   - skipped: Optional/conditional workflow that was skipped
+
+generated: "Wednesday, December 17, 2025"
+project: "CodeMask"
+project_type: null
+selected_track: "method"
+field_type: "greenfield"
+product_brief_requested: true
+research_requested: false
+brainstorm_requested: false
+workflow_path: "_bmad/bmm/workflows/workflow-status/paths/method-greenfield.yaml"
+workflow_status:
+  - phase: "Discovery (Optional)"
+    workflows:
+      - id: "product-brief"
+        status: "_bmad-output/analysis/product-brief-CodeMask-2025-12-17.md"
+        agent: "analyst"
+        command: "product-brief"
+        output: null
+        note: "Recommended for greenfield Method projects"
+  - phase: "Planning"
+    workflows:
+      - id: "prd"
+        status: "_bmad-output/prd.md"
+        agent: "pm"
+        command: "prd"
+        output: "Product Requirements Document with FRs and NFRs"
+      - id: "create-ux-design"
+        status: "_bmad-output/ux-design-specification.md"
+        agent: "ux-designer"
+        command: "create-ux-design"
+        output: null
+        note: "Determined after PRD - user/agent decides if needed"
+  - phase: "Solutioning"
+    workflows:
+      - id: "create-architecture"
+        status: "_bmad-output/architecture.md"
+        agent: "architect"
+        command: "create-architecture"
+        output: "System architecture document"
+        note: "Complete system design for greenfield projects"
+      - id: "create-epics-and-stories"
+        status: "_bmad-output/epics.md"
+        agent: "pm"
+        command: "create-epics-and-stories"
+        output: null
+        note: "Required: Break down PRD into implementable epics and stories with full context (PRD + UX + Architecture)"
+      - id: "test-design"
+        status: "_bmad-output/test-design-system.md"
+        agent: "tea"
+        command: "test-design"
+        output: "System-level testability review"
+        note: "Completed system-level testability review"
+      - id: "validate-architecture"
+        status: "optional"
+        agent: "architect"
+        command: "validate-architecture"
+        output: null
+        note: "Quality check for architecture completeness"
+      - id: "implementation-readiness"
+        status: "_bmad-output/implementation-readiness-report-2025-12-24.md"
+        agent: "architect"
+        command: "implementation-readiness"
+        output: null
+        note: "Validates PRD + Architecture + Epics + UX (optional)"
+  - phase: "Implementation"
+    workflows:
+      - id: "sprint-planning"
+        status: "_bmad-output/sprint-status.yaml"
+        agent: "sm"
+        command: "sprint-planning"
+        output: null
+        note: "Creates sprint plan - subsequent work tracked there"
