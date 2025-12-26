@@ -1,0 +1,52 @@
+# .gitignore for CodeMask (Native macOS App)
+
+# --- Xcode ---
+## Build artifacts
+build/
+DerivedData/
+*.moved-aside
+*.xcuserstate
+
+## User-specific files (Important to keep clean for multiple collaborators)
+xcuserdata/
+*.xcuserdatad
+*.xccheckout
+*.xcscmblueprint
+
+## Swift Package Manager
+.swiftpm/xcode/package.cache
+.swiftpm/xcode/xcuserdata/
+.build/
+
+## Unit tests and UI tests
+*.db
+*.journal
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# --- CodeMask Specific ---
+# Local logs or debug files
+*.log
+*.tmp
+
+# --- Gemini ---
+# Temporary execution files, history, and logs
+.gemini/tmp/
+.gemini/logs/
+.gemini/history/
+
+# BMad temporary outputs or non-essential artifacts ---
+_bmad/tmp/
+_bmad-output/tmp/
+
+# --- Specialized Tools ---
+.env
+*.pem
+*.p12
