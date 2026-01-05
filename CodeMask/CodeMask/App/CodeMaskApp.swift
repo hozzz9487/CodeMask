@@ -56,8 +56,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         AppStore.shared.send(.security(.permissions(.didCheckStatus(accessibility: isAx, inputMonitoring: isInput))))
         
-        // If not trusted, prompt
+        // If not trusted, prompt and signal error state
         if !isAx {
+            AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
             permissions.promptAccessibility()
         }
     }

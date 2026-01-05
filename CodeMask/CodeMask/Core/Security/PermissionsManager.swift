@@ -20,11 +20,26 @@ final class PermissionsManager: PermissionsManagerProtocol {
     }
     
     func checkInputMonitoring() -> Bool {
-        // Input Monitoring is trickier to check passively without triggering a prompt or using IOHID API hacks.
-        // For MVP, checking Accessibility is the primary gate.
-        // We will assume Input Monitoring needs to be requested via a dummy event listener later.
-        // For now, return a placeholder true or rely on AX.
-        return true 
+        // Attempt to create an event tap.
+        // If we lack Input Monitoring permission, this returns nil (or a disabled tap).
+        // We use a dummy tap that doesn't actually intercept anything important.
+        let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue),
+            callback: { _, _, _, _ in return Unmanaged.passUnretained(CGEvent(source: nil)!) },
+            userInfo: nil
+        )
+        
+        guard let validTap = tap else { return false }
+        
+        // If the tap is created but disabled, it might mean we lack permission (or it was disabled by system)
+        let isEnabled = CGEvent.tapIsEnabled(tap: validTap)
+        
+        // Clean up not strictly necessary for CFMachPort but good practice if we were keeping it.
+        // For a check, we just discard it.
+        return isEnabled
     }
     
     func promptAccessibility() {

@@ -56,6 +56,11 @@ final class MenuBarManager: NSObject {
         let symbolName = store.isSafe ? "lock.shield.fill" : "lock.shield"
         let config = NSImage.SymbolConfiguration(paletteColors: [store.isSafe ? .systemBlue : .systemGray])
         
-        button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?.withSymbolConfiguration(config)
+        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?.withSymbolConfiguration(config) {
+            button.image = image
+        } else {
+            // Fallback for missing symbol
+            button.title = "CM"
+        }
     }
 }

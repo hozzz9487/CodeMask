@@ -36,4 +36,15 @@ final class AppStoreTests: XCTestCase {
         store.send(.security(.permissions(.didCheckStatus(accessibility: false, inputMonitoring: true))))
         XCTAssertFalse(store.isSafe)
     }
+    
+    func testErrorHandling() {
+        let store = AppStore(environment: AppEnvironment())
+        
+        store.send(.security(.didEncounterError(.permissionsCheckFailed)))
+        
+        XCTAssertEqual(store.security.lastError, .permissionsCheckFailed)
+        
+        store.send(.security(.didEncounterError(.unknown)))
+        XCTAssertEqual(store.security.lastError, .unknown)
+    }
 }

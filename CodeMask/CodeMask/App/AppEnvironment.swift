@@ -10,12 +10,13 @@ import Foundation
 /// Dependency Injection Container for CodeMask
 /// Holds all system services and actors.
 struct AppEnvironment {
-    // Placeholder for future services
-    // var permissionsManager: PermissionsManagerProtocol
+    // Services
+    var permissionsManager: PermissionsManagerProtocol
+    
     // var clipboardMonitor: ClipboardMonitorProtocol
     // var sessionActor: SessionActor
     
-    init() {
-        // Initialize services here
+    init(permissionsManager: PermissionsManagerProtocol = PermissionsManager()) {
+        self.permissionsManager = permissionsManager
     }
 }

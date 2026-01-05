@@ -49,6 +49,10 @@ final class AppStore {
                 security.permissions.isAccessibilityGranted = accessibility
                 security.permissions.isInputMonitoringGranted = inputMonitoring
             }
+            
+        case .didEncounterError(let error):
+            security.lastError = error
+            // In a real app, we might also toggle a flag to show an alert
         }
     }
 }
@@ -59,15 +63,30 @@ enum AppAction {
     case security(Security.Action)
 }
 
+enum AppError: Error, Equatable {
+    case permissionsCheckFailed
+    case unknown
+    
+    static func == (lhs: AppError, rhs: AppError) -> Bool {
+        switch (lhs, rhs) {
+        case (.permissionsCheckFailed, .permissionsCheckFailed): return true
+        case (.unknown, .unknown): return true
+        default: return false
+        }
+    }
+}
+
 // MARK: - Feature Namespaces
 
 enum Security {
     struct State {
         var permissions = Permissions.State()
+        var lastError: AppError?
     }
     
     enum Action {
         case permissions(Permissions.Action)
+        case didEncounterError(AppError)
     }
     
     enum Permissions {
