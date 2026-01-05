@@ -1,6 +1,6 @@
 # Story 1.1: Core App & Permissions Scaffolding
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -40,20 +40,84 @@ so that the app can run securely in the background and access the system clipboa
 
 ## Review Follow-ups (AI Code Review - 2026-01-05)
 
-### 🔴 CRITICAL ISSUES
+### 🔴 CRITICAL ISSUES - PRIOR REVIEW (CLOSED)
 - [x] [AI-Review][CRITICAL] Remove LSUIElement from Info.plist - normal app with Dock icon per revised AC #2 [CodeMask/CodeMask.xcodeproj]
 - [x] [AI-Review][CRITICAL] Complete `PermissionsManager.checkInputMonitoring()` - replace hardcoded `return true` [PermissionsManager.swift:23]
 - [x] [AI-Review][CRITICAL] Add error handling: dispatch `.didEncounterError(AppError)` if permission checks fail [CodeMaskApp.swift]
 - [x] [AI-Review][CRITICAL] Add `didEncounterError` case to `Security.Action` enum [AppStore.swift]
 
-### 🟡 MEDIUM ISSUES
+### 🟡 MEDIUM ISSUES - PRIOR REVIEW (CLOSED)
 - [x] [AI-Review][MEDIUM] Inject `PermissionsManager` via `AppEnvironment` for DI testability [AppEnvironment.swift]
 - [x] [AI-Review][MEDIUM] Ensure all `AppStore.send()` in AppDelegate runs on `@MainActor` safely [CodeMaskApp.swift]
 - [x] [AI-Review][MEDIUM] Expand test suite: AppDelegate lifecycle, PermissionsManager errors, MenuBarManager binding [CodeMaskTests]
 
-### 🟢 LOW ISSUES  
+### 🟢 LOW ISSUES - PRIOR REVIEW (CLOSED)
 - [x] [AI-Review][LOW] Update File List - add ContentView.swift and document pbxproj changes [this file]
 - [x] [AI-Review][LOW] Add SF Symbol validation in MenuBarManager for compatibility [MenuBarManager.swift:35]
+
+---
+
+## Review Follow-ups (AI Code Review - Round 2 - 2026-01-05)
+
+### 🔴 CRITICAL ISSUES - ACTION REQUIRED
+- [ ] [AI-Review-2][CRITICAL] Add missing Info.plist permission descriptions to project.pbxproj - AC#3 violation [CodeMask.xcodeproj]
+  - Add build setting: `INFOPLIST_KEY_NSAppleEventsUsageDescription = "CodeMask requires Accessibility permission to paste text from shortcuts"`
+  - Add build setting: `INFOPLIST_KEY_NSSystemAdministrationUsageDescription = "CodeMask requires Input Monitoring to detect system shortcuts"`
+  - Without these, permission prompts will not appear; AC#3 unimplemented
+
+- [ ] [AI-Review-2][CRITICAL] Fix Input Monitoring permission check - memory leak and crash risk [PermissionsManager.swift:23-35]
+  - Current: Creates CGEvent from nil in callback, never releases tap
+  - Use `AXIsProcessTrusted()` approach: attempt to access accessibility features and catch errors
+  - OR use `AXUIElementCreateApplication` and catch permission errors
+  - Callback with nil CGEvent(source: nil) is undefined behavior
+
+- [ ] [AI-Review-2][CRITICAL] Use AppEnvironment.permissionsManager instead of direct instantiation [CodeMaskApp.swift:50]
+  - Line 50: `let permissions = PermissionsManager()` → `let permissions = AppStore.shared.environment.permissionsManager`
+  - Required for Dependency Injection pattern, test mockability, and stated architecture
+
+### 🟡 MEDIUM ISSUES - ACTION REQUIRED
+- [ ] [AI-Review-2][MEDIUM] Implement reactive state observation in MenuBarManager [MenuBarManager.swift]
+  - Current: `updateIcon()` called once on init; icon never updates if permissions change
+  - Add: `private var observation: AnyCancellable?` and observe `store.security.permissions`
+  - Icon state (Safe/Warning) must react to runtime permission changes
+
+- [ ] [AI-Review-2][MEDIUM] Add user-facing error alert when permissions denied [CodeMaskApp.swift + AppDelegate]
+  - Current: Error dispatched to store but never shown to user
+  - Need: NSAlert or modal window shown when `.didEncounterError(.permissionsCheckFailed)` occurs
+  - Affects UX - users don't know why app isn't working
+
+- [ ] [AI-Review-2][MEDIUM] Remove or define purpose of ContentView.swift dead code [CodeMask/Features/UI/ContentView.swift]
+  - Current: Generic "Hello, world!" placeholder, not referenced anywhere
+  - Either remove it or define it as preferences/settings window view (future Epic)
+
+### 🟡 MEDIUM ISSUES - ACTION REQUIRED
+- [ ] [AI-Review-2][MEDIUM] Implement reactive state observation in MenuBarManager [MenuBarManager.swift]
+  - Current: `updateIcon()` called once on init; icon never updates if permissions change
+  - Add: `private var observation: AnyCancellable?` and observe `store.security.permissions`
+  - Icon state (Safe/Warning) must react to runtime permission changes
+
+- [ ] [AI-Review-2][MEDIUM] Add user-facing error alert when permissions denied [CodeMaskApp.swift + AppDelegate]
+  - Current: Error dispatched to store but never shown to user
+  - Need: NSAlert or modal window shown when `.didEncounterError(.permissionsCheckFailed)` occurs
+  - Affects UX - users don't know why app isn't working
+
+- [ ] [AI-Review-2][MEDIUM] Remove or define purpose of ContentView.swift dead code [CodeMask/Features/UI/ContentView.swift]
+  - Current: Generic "Hello, world!" placeholder, not referenced anywhere
+  - Either remove it or define it as preferences/settings window view (future Epic)
+
+- [ ] [AI-Review-2][MEDIUM] Add "Open System Preferences" menu action [MenuBarManager.swift:43-52]
+  - Current: Menu shows "Setup Required" but no way to open permissions settings
+  - Add menu item: `NSMenuItem(title: "Open System Preferences", action: #selector(openSystemPreferences), keyEquivalent: "")`
+  - Improve UX with direct link to: `System Preferences → Security & Privacy → Accessibility`
+
+### 🟢 LOW ISSUES - ACTION ITEMS
+- [ ] [AI-Review-2][LOW] Update test documentation in PermissionsManagerTests [CodeMaskTests/Core/PermissionsManagerTests.swift:16]
+  - Comment references "hardcoded true" but code never had this
+  - Either clarify intent or remove stale comment
+
+- [ ] [AI-Review-2][LOW] Add security notes to dev docs about thread-safety of CGEvent operations [Dev Notes Section]
+  - Verify all CGEvent.tapCreate calls happen on @MainActor
+  - Document any sandbox restrictions for Input Monitoring permission
 
 ## Dev Notes
 
