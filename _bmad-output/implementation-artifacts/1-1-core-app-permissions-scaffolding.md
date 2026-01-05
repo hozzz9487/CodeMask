@@ -100,6 +100,9 @@ Gemini Pro 1.5 (Simulated)
 - Confirmed directory structure reorganization matches architecture.
 - Implemented AppStore with Observation and MainActor isolation.
 - Created AppEnvironment for dependency injection.
+- **Fix**: Moved `@NSApplicationDelegateAdaptor` inside `CodeMaskApp` struct to fix "Extensions must not contain stored properties" error.
+- **Fix**: Added `@MainActor` to `AppDelegate` methods to fix concurrency isolation error when calling `AppStore.send`.
+- **Note**: User instructed to fix `DEVELOPMENT_ASSET_PATHS` in Xcode Build Settings manually.
 
 ### Completion Notes List
 - Initial scaffolding story created.

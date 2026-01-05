@@ -9,6 +9,9 @@ import SwiftUI
 
 @main
 struct CodeMaskApp: App {
+    // Inject Delegate
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     // 1. Initialize Store (Single Source of Truth)
     @State private var store = AppStore.shared
     
@@ -28,8 +31,6 @@ struct CodeMaskApp: App {
     
     init() {
         // Setup logic can go here or in a delegate
-        // For SwiftUI life cycle, we perform setup in a task or onAppear typically,
-        // but for MenuBarManager which is AppKit, we need it early.
     }
 }
 
@@ -38,6 +39,7 @@ struct CodeMaskApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarManager: MenuBarManager?
     
+    @MainActor
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize Menu Bar Manager
         menuBarManager = MenuBarManager(store: AppStore.shared)
@@ -46,6 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         checkPermissions()
     }
     
+    @MainActor
     func checkPermissions() {
         let permissions = PermissionsManager()
         let isAx = permissions.checkAccessibility()
@@ -58,9 +61,4 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             permissions.promptAccessibility()
         }
     }
-}
-
-extension CodeMaskApp {
-    // Inject Delegate
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 }
