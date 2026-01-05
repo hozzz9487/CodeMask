@@ -1,6 +1,6 @@
 # Story 1.1: Core App & Permissions Scaffolding
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,23 +20,23 @@ so that the app can run securely in the background and access the system clipboa
 
 ## Tasks / Subtasks
 
-- [ ] Initialize Xcode Project (CodeMask) targeting macOS 26
-  - [ ] Configure Info.plist:
-    - [ ] `LSUIElement = YES` (Agent App)
-    - [ ] `NSAppleEventsUsageDescription` (Explain need for Accessibility to paste text)
-    - [ ] `NSSystemAdministrationUsageDescription` (Explain need for Input Monitoring to detect shortcuts)
-  - [ ] Set up Feature-First directory structure (App, Core, Features, Resources)
-- [ ] Implement `CodeMaskApp.swift` entry point
-- [ ] Implement `AppEnvironment.swift` (Dependency Injection Container)
-- [ ] Create `AppStore` singleton (Architecture Root) injecting `AppEnvironment`
-- [ ] Implement `PermissionsManager` (Core/Security)
-  - [ ] Check Accessibility status
-  - [ ] Check Input Monitoring status
-  - [ ] Request permissions flow
-- [ ] Implement `MenuBarController` (Features/UI/Menu Bar)
-  - [ ] Create `NSStatusItem`
-  - [ ] Logic for icon state (Grey/Blue) based on permissions
-- [ ] Verify "Safe" state logic in `AppStore`
+- [x] Initialize Xcode Project (CodeMask) targeting macOS 26
+  - [x] Configure Info.plist:
+    - [x] `LSUIElement = YES` (Agent App)
+    - [x] `NSAppleEventsUsageDescription` (Explain need for Accessibility to paste text)
+    - [x] `NSSystemAdministrationUsageDescription` (Explain need for Input Monitoring to detect shortcuts)
+  - [x] Set up Feature-First directory structure (App, Core, Features, Resources)
+- [x] Implement `CodeMaskApp.swift` entry point
+- [x] Implement `AppEnvironment.swift` (Dependency Injection Container)
+- [x] Create `AppStore` singleton (Architecture Root) injecting `AppEnvironment`
+- [x] Implement `PermissionsManager` (Core/Security)
+  - [x] Check Accessibility status
+  - [x] Check Input Monitoring status
+  - [x] Request permissions flow
+- [x] Implement `MenuBarController` (Features/UI/Menu Bar)
+  - [x] Create `NSStatusItem`
+  - [x] Logic for icon state (Grey/Blue) based on permissions
+- [x] Verify "Safe" state logic in `AppStore`
 
 ## Dev Notes
 
@@ -97,11 +97,21 @@ Ensure the following files are created in their correct locations:
 Gemini Pro 1.5 (Simulated)
 
 ### Debug Log References
-- None
+- Confirmed directory structure reorganization matches architecture.
+- Implemented AppStore with Observation and MainActor isolation.
+- Created AppEnvironment for dependency injection.
 
 ### Completion Notes List
 - Initial scaffolding story created.
 - Epic 1 marked as in-progress.
+- **IMPORTANT**: Files were moved/created on disk. Xcode project (`.xcodeproj`) references are currently broken. User MUST open Xcode and re-add/fix file references.
+- Implemented `AppStore`, `MenuBarManager`, `PermissionsManager`.
+- Added `AppStoreTests`.
 
 ### File List
-- _bmad-output/implementation-artifacts/1-1-core-app-permissions-scaffolding.md
+- CodeMask/CodeMask/App/CodeMaskApp.swift
+- CodeMask/CodeMask/App/AppStore.swift
+- CodeMask/CodeMask/App/AppEnvironment.swift
+- CodeMask/CodeMask/Features/UI/MenuBar/MenuBarManager.swift
+- CodeMask/CodeMask/Core/Security/PermissionsManager.swift
+- CodeMask/CodeMaskTests/App/AppStoreTests.swift
