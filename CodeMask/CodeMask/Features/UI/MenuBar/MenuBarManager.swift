@@ -25,10 +25,10 @@ final class MenuBarManager: NSObject {
     }
     
     private func startObservation() {
-        // Continuous observation of store.isSafe via Combine bridge
-        store.isSafePublisher
+        // Observe permission changes and update icon immediately
+        store.permissionChangedPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] in
                 self?.updateIcon()
             }
             .store(in: &cancellables)

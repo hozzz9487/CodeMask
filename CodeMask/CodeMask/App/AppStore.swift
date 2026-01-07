@@ -21,6 +21,9 @@ final class AppStore {
     // Feature States
     var security = Security.State()
     
+    // Track previous permission state to detect changes
+    @ObservationIgnored private var previousPermissionState: Security.Permissions.State? = nil
+    
     // Computed props for convenience
     var isSafe: Bool { security.permissions.isAccessibilityGranted && security.permissions.isInputMonitoringGranted }
     
@@ -28,9 +31,11 @@ final class AppStore {
     // Using @ObservationIgnored to prevent observation loops if these were used in reducers
     @ObservationIgnored private let errorSubject = PassthroughSubject<AppError?, Never>()
     @ObservationIgnored private let isSafeSubject = PassthroughSubject<Bool, Never>()
+    @ObservationIgnored private let permissionChangedSubject = PassthroughSubject<Void, Never>()
     
     var errorPublisher: AnyPublisher<AppError?, Never> { errorSubject.eraseToAnyPublisher() }
     var isSafePublisher: AnyPublisher<Bool, Never> { isSafeSubject.eraseToAnyPublisher() }
+    var permissionChangedPublisher: AnyPublisher<Void, Never> { permissionChangedSubject.eraseToAnyPublisher() }
     
     init(environment: AppEnvironment) {
         self.environment = environment
@@ -46,9 +51,6 @@ final class AppStore {
         case .security(let action):
             reduce(security: action)
         }
-        
-        // Notify publishers after state change
-        isSafeSubject.send(isSafe)
     }
     
     // MARK: - Reducers
@@ -57,8 +59,20 @@ final class AppStore {
         case .permissions(let permissionAction):
             switch permissionAction {
             case .didCheckStatus(let accessibility, let inputMonitoring):
-                security.permissions.isAccessibilityGranted = accessibility
-                security.permissions.isInputMonitoringGranted = inputMonitoring
+                let newState = Security.Permissions.State(
+                    isAccessibilityGranted: accessibility,
+                    isInputMonitoringGranted: inputMonitoring
+                )
+                
+                // Only emit events if permissions actually changed
+                if previousPermissionState != newState {
+                    security.permissions = newState
+                    previousPermissionState = newState
+                    
+                    // Notify subscribers only on actual changes
+                    isSafeSubject.send(isSafe)
+                    permissionChangedSubject.send(())
+                }
             }
             
         case .didEncounterError(let error):

@@ -10,23 +10,15 @@ import Combine
 
 @main
 struct CodeMaskApp: App {
-    // Inject Delegate
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
-    // 1. Initialize Store (Single Source of Truth)
     @State private var store = AppStore.shared
-    
-    // 2. Hold the MenuBarManager
     @State private var menuBarManager: MenuBarManager?
     
     var body: some Scene {
-        // No WindowGroup for LSUIElement app
-        // Epic 3: Settings Window will go here
         Settings {
             EmptyView()
         }
         .commands {
-            // Remove standard commands if necessary
             CommandGroup(replacing: .newItem) {}
         }
     }
@@ -36,69 +28,98 @@ struct CodeMaskApp: App {
     }
 }
 
-// Extension to handle initialization after body is ready is tricky in pure SwiftUI App without WindowGroup.
-// A common pattern for Agent apps is to use NSApplicationDelegate adaptor.
+// MARK: - AppDelegate with Smart Permission Handling
 class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarManager: MenuBarManager?
     private var cancellables = Set<AnyCancellable>()
-    private var permissionCheckTimer: Timer?
+    
+    // Track if we've already shown the initial permission alert
+    private var hasShownInitialPermissionAlert = false
+    
+    // Track the last permission state to detect changes
+    private var lastPermissionState: (ax: Bool, input: Bool)? = nil
     
     @MainActor
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize Menu Bar Manager
         menuBarManager = MenuBarManager(store: AppStore.shared)
         
-        // Start observing state for errors via Combine
-        AppStore.shared.errorPublisher
+        // Only show error alert on permission state CHANGES, not every check
+        AppStore.shared.permissionChangedPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] error in
-                self?.handleError(error)
+            .sink { [weak self] in
+                self?.handlePermissionStateChange()
             }
             .store(in: &cancellables)
         
-        // Trigger initial permission check
+        // Listen for app becoming active to re-check permissions
+        // (user might have returned from System Preferences)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        
+        // Perform initial permission check on launch
         checkPermissions()
-        
-        // Start background permission monitor to detect external permission revocation
-        // Check every 5 seconds to catch permission changes made in System Preferences
-        startPermissionMonitor()
     }
     
     @MainActor
-    private func startPermissionMonitor() {
-        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.checkPermissions()
+    @objc private func applicationDidBecomeActive() {
+        // Re-check permissions when app returns to foreground
+        // This allows immediate icon update if user changed settings
+        checkPermissions()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    // MARK: - Permission Management
+    
+    @MainActor
+    private func handlePermissionStateChange() {
+        let isAx = AppStore.shared.environment.permissionsManager.checkAccessibility()
+        let isInput = AppStore.shared.environment.permissionsManager.checkInputMonitoring()
+        let currentState = (isAx, isInput)
+        
+        // Only show alert if this is the FIRST time permissions failed on launch
+        // OR if permissions were revoked after being granted
+        let shouldShowAlert = !AppStore.shared.isSafe && (
+            !hasShownInitialPermissionAlert ||
+            (lastPermissionState?.0 == true && !isAx) ||
+            (lastPermissionState?.1 == true && !isInput)
+        )
+        
+        if shouldShowAlert {
+            hasShownInitialPermissionAlert = true
+            showPermissionAlert()
         }
+        
+        lastPermissionState = currentState
     }
     
     @MainActor
-    private func handleError(_ error: AppError?) {
-        guard let error = error else { return }
+    private func showPermissionAlert() {
+        let alert = NSAlert()
+        alert.messageText = Strings.permissionAlertTitle
+        alert.informativeText = Strings.permissionAlertMessage
+        alert.alertStyle = .warning  // Changed from critical to warning
+        alert.addButton(withTitle: Strings.openSettingsButton)
+        alert.addButton(withTitle: "稍後提醒")  // "Remind Later" option
         
-        if error == .permissionsCheckFailed {
-            let alert = NSAlert()
-            alert.messageText = Strings.permissionAlertTitle
-            alert.informativeText = Strings.permissionAlertMessage
-            alert.alertStyle = .critical
-            alert.addButton(withTitle: Strings.openSettingsButton)
-            alert.addButton(withTitle: Strings.quitButton)
-            
-            // Bring app to front so alert is visible
-            NSApp.activate(ignoringOtherApps: true)
-            
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                // Open Settings
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                    NSWorkspace.shared.open(url)
-                }
-            } else {
-                NSApplication.shared.terminate(nil)
+        // Bring app to front so alert is visible
+        NSApp.activate(ignoringOtherApps: true)
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            // Open Settings
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                NSWorkspace.shared.open(url)
             }
-            
-            // Clear error after handling so we can detect future errors
-            AppStore.shared.send(.security(.didClearError))
         }
+        // If user clicks "Remind Later", just dismiss - don't quit
     }
     
     @MainActor
@@ -109,12 +130,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         AppStore.shared.send(.security(.permissions(.didCheckStatus(accessibility: isAx, inputMonitoring: isInput))))
         
-        // If not trusted, prompt and signal error state
-        if !isAx || !isInput {
-            AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
-            if !isAx {
-                permissions.promptAccessibility()
-            }
+        // Only prompt for accessibility if not granted AND we haven't shown alert yet
+        // This prevents duplicate prompts
+        if !isAx && !hasShownInitialPermissionAlert {
+            permissions.promptAccessibility()
         }
     }
 }
