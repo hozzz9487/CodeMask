@@ -1,6 +1,6 @@
 # Story 1.1: Core App & Permissions Scaffolding
 
-Status: in-progress
+Status: in-progress (Code Review Round 3 Complete - 10 Action Items Created)
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -118,6 +118,61 @@ so that the app can run securely in the background and access the system clipboa
 - [ ] [AI-Review-2][LOW] Add security notes to dev docs about thread-safety of CGEvent operations [Dev Notes Section]
   - Verify all CGEvent.tapCreate calls happen on @MainActor
   - Document any sandbox restrictions for Input Monitoring permission
+
+## Review Follow-ups (AI Code Review - Round 3 - 2026-01-07)
+
+**Fresh Context Review - 10 Issues Found**
+
+### 🔴 CRITICAL ISSUES - BLOCKERS
+- [ ] [AI-Review-3][CRITICAL] Fix CGEvent tap resource leak - tap never disabled [PermissionsManager.swift:23-39]
+  - Current: `CGEvent.tapCreate()` creates system resource but never calls `CGEvent.tapEnable(tap:state:false)` to release
+  - Impact: Resource leak + use-after-free crash risk after ~100 calls
+  - Fix: Add `CGEvent.tapEnable(tap: validTap, state: false)` before return statement
+  - Without fix: AC#1 (Stability) fails - app crashes during normal operation
+
+- [ ] [AI-Review-3][CRITICAL] MenuBarManager observation fires only once - breaks on permission changes [MenuBarManager.swift:17-25]
+  - Current: `withObservationTracking` tracking ends after first onChange
+  - Scenario: Icon doesn't update if permissions change after initial check (user revokes in System Preferences)
+  - Impact: AC#4 (Status Indication) violated - icon state becomes stale
+  - Fix: Use proper Combine `AnyCancellable` with continuous observation, not one-time tracking
+  - Test case: Run app, grant permissions, revoke in System Preferences → icon should update (currently doesn't)
+
+- [ ] [AI-Review-3][CRITICAL] AppDelegate error observation loop breaks after first error [CodeMaskApp.swift:51-60]
+  - Current: Same one-time `withObservationTracking` pattern
+  - Impact: If permission check fails, alert shows. User fixes. Permission check runs again. **Second error never tracked** → no alert
+  - Fix: Implement continuous observation pattern with stored `AnyCancellable`
+
+### 🟡 MEDIUM ISSUES
+- [ ] [AI-Review-3][MEDIUM] CGEvent callback receives nil - undefined behavior risk [PermissionsManager.swift:33]
+  - Current: `callback: { _, _, event, _ in return Unmanaged.passUnretained(event) }`
+  - Problem: event parameter can be nil when permission denied; passing nil to Unmanaged is crash
+  - Fix: Add guard statement: `guard let event = event else { return nil }`
+
+- [ ] [AI-Review-3][MEDIUM] Only Accessibility permission checked for error dispatch - Input Monitoring ignored [CodeMaskApp.swift:95-99]
+  - Current: `if !isAx { send(.didEncounterError(...)) }` but no check for `!isInput`
+  - Impact: AC#3 partially implemented - Input Monitoring failures silently ignored
+  - Fix: Change to: `if !isAx || !isInput { send(.didEncounterError(...)) }`
+
+- [ ] [AI-Review-3][MEDIUM] ContentView.swift is dead code - never referenced [ContentView.swift]
+  - Current: Generic "Settings coming in Epic 3" placeholder, not used anywhere
+  - Status: Already flagged in Round 2, still exists
+  - Action: Either delete or define as preferences window (future Epic)
+
+- [ ] [AI-Review-3][MEDIUM] Test coverage incomplete - PermissionsManager 1/3 methods tested [PermissionsManagerTests.swift]
+  - Missing: `checkAccessibility()`, `promptAccessibility()`, nil event edge case
+  - Add: Test cases for all public methods and error conditions
+
+- [ ] [AI-Review-3][MEDIUM] No logging if SF Symbol fails to load [MenuBarManager.swift:75-80]
+  - Current: Falls back to "CM" text without logging why symbol failed
+  - Problem: Makes debugging hard; can't tell if symbol name is wrong or macOS version incompatible
+  - Fix: Add os_log or print: `print("Failed to load symbol: \(symbolName)")`
+
+### 🟢 LOW ISSUES
+- [ ] [AI-Review-3][LOW] Unused Combine import (imported in AppStore, not CodeMaskApp) [CodeMaskApp.swift]
+  - Action: Remove line 9 if not needed, or verify usage
+
+- [ ] [AI-Review-3][LOW] No test for PermissionsManager error handling (nil CGEvent scenario) [PermissionsManagerTests.swift]
+  - Action: Add mock test that simulates tap failure and verifies false return
 
 ## Dev Notes
 
