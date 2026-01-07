@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 // MARK: - Global State
 @MainActor
@@ -23,6 +24,14 @@ final class AppStore {
     // Computed props for convenience
     var isSafe: Bool { security.permissions.isAccessibilityGranted && security.permissions.isInputMonitoringGranted }
     
+    // Combine bridge for non-SwiftUI observers (e.g. AppDelegate, MenuBarManager)
+    // Using @ObservationIgnored to prevent observation loops if these were used in reducers
+    @ObservationIgnored private let errorSubject = PassthroughSubject<AppError?, Never>()
+    @ObservationIgnored private let isSafeSubject = PassthroughSubject<Bool, Never>()
+    
+    var errorPublisher: AnyPublisher<AppError?, Never> { errorSubject.eraseToAnyPublisher() }
+    var isSafePublisher: AnyPublisher<Bool, Never> { isSafeSubject.eraseToAnyPublisher() }
+    
     init(environment: AppEnvironment) {
         self.environment = environment
     }
@@ -37,6 +46,9 @@ final class AppStore {
         case .security(let action):
             reduce(security: action)
         }
+        
+        // Notify publishers after state change
+        isSafeSubject.send(isSafe)
     }
     
     // MARK: - Reducers
@@ -51,9 +63,11 @@ final class AppStore {
             
         case .didEncounterError(let error):
             security.lastError = error
+            errorSubject.send(error)
             
         case .didClearError:
             security.lastError = nil
+            errorSubject.send(nil)
         }
     }
 }

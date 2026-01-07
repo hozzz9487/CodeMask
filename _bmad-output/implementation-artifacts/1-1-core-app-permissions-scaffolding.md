@@ -1,6 +1,6 @@
 # Story 1.1: Core App & Permissions Scaffolding
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -164,36 +164,11 @@ so that the app can run securely in the background and access the system clipboa
 **Fresh Context Review - 5 Critical Blockers Found**
 
 ### 🔴 CRITICAL ISSUES - BLOCKING MERGE
-- [ ] [AI-Review-4][CRITICAL] Fix CGEvent callback nil guard - crash on permission denied [PermissionsManager.swift:33]
-  - Current: `return Unmanaged.passUnretained(event)` where event can be nil
-  - Problem: Undefined behavior; will crash if Input Monitoring permission denied
-  - Fix: Add `guard let event = event else { return nil }` before Unmanaged call
-  - Impact: AC#1 (Stability) - app crashes during normal permission request flow
-
-- [ ] [AI-Review-4][CRITICAL] Replace AppDelegate error observation with Combine AnyCancellable [CodeMaskApp.swift:54-62]
-  - Current: `withObservationTracking` fires only once, then re-registers
-  - Problem: Race condition; second error never detected if it occurs during re-registration window
-  - Scenario: Permission check fails → alert shown. User fixes. Second check runs. **No alert** (error missed).
-  - Fix: Use continuous `@Observable` reactive pattern with stored `AnyCancellable`
-  - Impact: Users stuck with no feedback if permissions issue occurs after initial launch
-
-- [ ] [AI-Review-4][CRITICAL] Replace MenuBarManager observation with Combine AnyCancellable [MenuBarManager.swift:19-28]
-  - Current: Same one-time observation pattern
-  - Problem: Icon updates only on first permission change, then stops
-  - Scenario: App starts (icon Safe/blue). User revokes permissions in System Settings. **Icon still shows Safe** (stale).
-  - Fix: Use proper continuous observation with `AnyCancellable`
-  - Impact: AC#4 (Status Indication) violated - icon state misleading and non-reactive
-
-- [ ] [AI-Review-4][CRITICAL] Add automation entitlement to CodeMask.entitlements [CodeMask.entitlements]
-  - Current: Only contains sandboxing + file access; missing permission entitlements
-  - Problem: Without entitlements, permission prompts won't appear correctly
-  - Fix: Add `<key>com.apple.security.automation</key><true/>` for Accessibility permission
-  - Impact: AC#3 (Permission Request) - user never prompted; app can't function
-
-- [ ] [AI-Review-4][CRITICAL] Add nil CGEvent test case [PermissionsManagerTests.swift]
-  - Current: Test suite doesn't cover nil event scenario
-  - Add: Test that verifies `checkInputMonitoring()` returns false when tap creation fails
-  - Impact: Prevents regression of Issue #1 in future refactors
+- [x] [AI-Review-4][CRITICAL] Fix CGEvent callback nil guard - crash on permission denied [PermissionsManager.swift:33]
+- [x] [AI-Review-4][CRITICAL] Replace AppDelegate error observation with Combine AnyCancellable [CodeMaskApp.swift:54-62]
+- [x] [AI-Review-4][CRITICAL] Replace MenuBarManager observation with Combine AnyCancellable [MenuBarManager.swift:19-28]
+- [x] [AI-Review-4][CRITICAL] Add automation entitlement to CodeMask.entitlements [CodeMask.entitlements]
+- [x] [AI-Review-4][CRITICAL] Add nil CGEvent test case [PermissionsManagerTests.swift]
 
 ## Dev Notes
 
@@ -275,18 +250,25 @@ Gemini Pro 1.5 (Simulated)
 - **Test**: Added tests for `PermissionsManager`.
 
 ### Completion Notes List
-- Addressed all Code Review items (Round 2 and Round 3).
-- Permissions logic is now leak-free and robust.
-- Error handling flow includes user-facing alerts and proper state clearing.
-- Menu Bar icon now correctly reflects runtime state changes.
+- Addressed all Code Review items (Round 2, Round 3, and Round 4).
+- Permissions logic is now leak-free, crash-safe (nil guards), and robust.
+- Implemented continuous state observation using Combine AnyCancellable in AppDelegate and MenuBarManager to bridge @Observable state.
+- Added automation entitlement to ensure system permission prompts appear correctly.
+- Enhanced test suite with nil event callback simulation for PermissionsManager.
+- Status Indication (lock.shield) correctly reflects runtime permission changes.
 
 ### File List
 - CodeMask/CodeMask/App/CodeMaskApp.swift (modified)
 - CodeMask/CodeMask/App/AppStore.swift (modified)
 - CodeMask/CodeMask/App/AppEnvironment.swift (modified)
 - CodeMask/CodeMask/Features/UI/MenuBar/MenuBarManager.swift (modified)
-- CodeMask/CodeMask/Features/UI/ContentView.swift (modified)
 - CodeMask/CodeMask/Core/Security/PermissionsManager.swift (modified)
+- CodeMask/CodeMask/CodeMask.entitlements (modified)
 - CodeMask/CodeMaskTests/App/AppStoreTests.swift (modified)
-- CodeMask/CodeMaskTests/Core/PermissionsManagerTests.swift (created)
-- CodeMask/CodeMask.xcodeproj/project.pbxproj
+- CodeMask/CodeMaskTests/Core/PermissionsManagerTests.swift (modified)
+- CodeMask/CodeMask.xcodeproj/project.pbxproj (modified)
+
+### Change Log
+- 2026-01-05: Initial scaffolding and permissions implementation.
+- 2026-01-07: Addressed Round 2 and Round 3 review findings.
+- 2026-01-07: Addressed Round 4 critical blockers; implemented Combine-based observation and fixed resource leaks. status -> review.

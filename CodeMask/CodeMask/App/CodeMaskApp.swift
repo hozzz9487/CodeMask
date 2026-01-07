@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 @main
 struct CodeMaskApp: App {
@@ -39,29 +40,23 @@ struct CodeMaskApp: App {
 // A common pattern for Agent apps is to use NSApplicationDelegate adaptor.
 class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarManager: MenuBarManager?
+    private var cancellables = Set<AnyCancellable>()
     
     @MainActor
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize Menu Bar Manager
         menuBarManager = MenuBarManager(store: AppStore.shared)
         
-        // Start observing state for errors
-        startObservation()
+        // Start observing state for errors via Combine
+        AppStore.shared.errorPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                self?.handleError(error)
+            }
+            .store(in: &cancellables)
         
         // Trigger initial permission check
         checkPermissions()
-    }
-    
-    @MainActor
-    private func startObservation() {
-        withObservationTracking {
-            _ = AppStore.shared.security.lastError
-        } onChange: {
-            Task { @MainActor [weak self] in
-                self?.handleError(AppStore.shared.security.lastError)
-                self?.startObservation()
-            }
-        }
     }
     
     @MainActor

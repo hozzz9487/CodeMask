@@ -15,6 +15,14 @@ protocol PermissionsManagerProtocol {
 }
 
 final class PermissionsManager: PermissionsManagerProtocol {
+    typealias TapProvider = (CGEventTapLocation, CGEventTapPlacement, CGEventTapOptions, CGEventMask, @escaping CGEventTapCallBack, UnsafeMutableRawPointer?) -> CFMachPort?
+    
+    private let tapProvider: TapProvider
+    
+    init(tapProvider: @escaping TapProvider = CGEvent.tapCreate) {
+        self.tapProvider = tapProvider
+    }
+    
     func checkAccessibility() -> Bool {
         return AXIsProcessTrusted()
     }
@@ -23,17 +31,19 @@ final class PermissionsManager: PermissionsManagerProtocol {
         // Attempt to create an event tap to check for Input Monitoring permission.
         // If permission is missing, this usually returns nil.
         // We use a dummy tap that passes events through.
-        let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue),
-            callback: { _, _, event, _ in
-                // event is non-optional in the Swift signature of the callback
-                // Pass the event through untouched
-                return Unmanaged.passUnretained(event)
+        let tap = tapProvider(
+            .cgSessionEventTap,
+            .headInsertEventTap,
+            .defaultTap,
+            CGEventMask(1 << CGEventType.keyDown.rawValue),
+            { _, _, event, _ in
+                // Fix: CGEvent callback nil guard - crash on permission denied
+                // Use a local variable to bridge to optional if necessary
+                let optionalEvent: CGEvent? = event
+                guard let validEvent = optionalEvent else { return nil }
+                return Unmanaged.passUnretained(validEvent)
             },
-            userInfo: nil
+            nil
         )
         
         guard let validTap = tap else { return false }

@@ -8,12 +8,14 @@
 import AppKit
 import SwiftUI
 import os
+import Combine
 
 @MainActor
 final class MenuBarManager: NSObject {
     private var statusItem: NSStatusItem!
     private let store: AppStore
     private let logger = Logger(subsystem: "com.edsncfw.CodeMask", category: "MenuBarManager")
+    private var cancellables = Set<AnyCancellable>()
     
     init(store: AppStore) {
         self.store = store
@@ -23,17 +25,13 @@ final class MenuBarManager: NSObject {
     }
     
     private func startObservation() {
-        // Continuous observation of store.isSafe
-        withObservationTracking {
-            _ = store.isSafe
-        } onChange: {
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                self.updateIcon()
-                // Re-register observation for next change
-                self.startObservation()
+        // Continuous observation of store.isSafe via Combine bridge
+        store.isSafePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateIcon()
             }
-        }
+            .store(in: &cancellables)
     }
     
     private func setupStatusItem() {
