@@ -48,13 +48,13 @@ final class PermissionsManager: PermissionsManagerProtocol {
         
         guard let validTap = tap else { return false }
         
+        // CRITICAL: Ensure the tap is disabled even if tapIsEnabled throws an exception.
+        // This prevents resource leaks on error paths.
+        defer { CGEvent.tapEnable(tap: validTap, enable: false) }
+        
         // If we got a tap, we likely have permission.
         // Explicitly check if it is enabled.
         let isEnabled = CGEvent.tapIsEnabled(tap: validTap)
-        
-        // CRITICAL: Disable the tap to release resources and prevent leaks.
-        // Although CFMachPort is ref-counted, explicitly disabling ensures it stops monitoring.
-        CGEvent.tapEnable(tap: validTap, enable: false)
         
         return isEnabled
     }

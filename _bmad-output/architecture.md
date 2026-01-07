@@ -143,7 +143,7 @@ Manual Xcode Project setup targeting macOS (AppKit life cycle with SwiftUI Views
 *   **UI Framework:**
     *   **Decision:** SwiftUI for Views + AppKit for Window Management (`NSPanel`).
     *   **Rationale:** SwiftUI provides rapid UI development, while AppKit is necessary for non-standard utility windows (HUDs) and Menu Bar items.
-    *   **Version:** macOS 26 Tahoe (Native target).
+    *   **Version:** macOS 14.5 Sonoma or later (Native target).
 
 ### Infrastructure & Deployment
 
@@ -325,7 +325,7 @@ All 27 FRs are mapped to specific modules and architectural patterns.
 
 ### Implementation Readiness Validation ✅
 
-**Decision Completeness:** All critical decisions documented with Swift 6.2 / macOS 26 Tahoe versions.
+**Decision Completeness:** All critical decisions documented with Swift 6.2 / macOS 14.5 Sonoma versions.
 **Structure Completeness:** Specific 10-feature directory tree defined.
 **Pattern Completeness:** Strict rules for Action naming (Events) and State access (Dispatch-only) are established.
 
@@ -379,7 +379,7 @@ Initialize the Xcode project with the feature-first directory structure and impl
 ### Final Architecture Deliverables
 
 **📋 Complete Architecture Document**
-*   All architectural decisions documented with specific versions (Swift 6.2, macOS 26).
+*   All architectural decisions documented with specific versions (Swift 6.2, macOS 14.5 Sonoma).
 *   Implementation patterns ensuring AI agent consistency (Nested Namespace, Event-based Actions).
 *   Complete project structure with 10 feature-aligned main areas.
 *   Requirements to architecture mapping (100% coverage).
@@ -392,7 +392,7 @@ Initialize the Xcode project with the feature-first directory structure and impl
 *   27 functional requirements fully supported.
 
 **📚 AI Agent Implementation Guide**
-*   Technology stack with verified versions (Swift 6.2, macOS 26 Tahoe).
+*   Technology stack with verified versions (Swift 6.2, macOS 14.5 Sonoma).
 *   Consistency rules that prevent implementation conflicts (Single Source of Truth, Dispatch-only Views).
 *   Project structure with clear boundaries (Feature-First Isolation).
 *   Integration patterns and communication standards (Actor-isolated State, Conflated Task Monitoring).
@@ -403,7 +403,7 @@ Initialize the Xcode project with the feature-first directory structure and impl
 This architecture document is your complete guide for implementing CodeMask. Follow all decisions, patterns, and structures exactly as documented.
 
 **First Implementation Priority:**
-Manual Xcode Project setup targeting macOS 26 (AppKit life cycle with SwiftUI Views), creating the feature-first directory structure and the `AppStore` singleton.
+Manual Xcode Project setup targeting macOS 14.5 Sonoma (AppKit life cycle with SwiftUI Views), creating the feature-first directory structure and the `AppStore` singleton.
 
 **Development Sequence:**
 1. Initialize project using custom scaffolding.

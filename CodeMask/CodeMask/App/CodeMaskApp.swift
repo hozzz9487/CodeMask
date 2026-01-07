@@ -41,6 +41,7 @@ struct CodeMaskApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarManager: MenuBarManager?
     private var cancellables = Set<AnyCancellable>()
+    private var permissionCheckTimer: Timer?
     
     @MainActor
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -57,6 +58,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Trigger initial permission check
         checkPermissions()
+        
+        // Start background permission monitor to detect external permission revocation
+        // Check every 5 seconds to catch permission changes made in System Preferences
+        startPermissionMonitor()
+    }
+    
+    @MainActor
+    private func startPermissionMonitor() {
+        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            self?.checkPermissions()
+        }
     }
     
     @MainActor
@@ -65,11 +77,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         if error == .permissionsCheckFailed {
             let alert = NSAlert()
-            alert.messageText = "Permissions Required"
-            alert.informativeText = "CodeMask needs Accessibility and Input Monitoring permissions to function. Please grant them in System Settings."
+            alert.messageText = Strings.permissionAlertTitle
+            alert.informativeText = Strings.permissionAlertMessage
             alert.alertStyle = .critical
-            alert.addButton(withTitle: "Open Settings")
-            alert.addButton(withTitle: "Quit")
+            alert.addButton(withTitle: Strings.openSettingsButton)
+            alert.addButton(withTitle: Strings.quitButton)
             
             // Bring app to front so alert is visible
             NSApp.activate(ignoringOtherApps: true)

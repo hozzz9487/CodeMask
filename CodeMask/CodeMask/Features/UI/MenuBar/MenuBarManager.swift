@@ -40,7 +40,7 @@ final class MenuBarManager: NSObject {
         if let button = statusItem.button {
             // Default "Safe" icon (SFSymbol)
             // Use system symbols: lock.shield (safe), lock.shield.warning (danger), etc.
-            button.image = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: "CodeMask Safe")
+            button.image = NSImage(systemSymbolName: Strings.lockShieldIconDescription, accessibilityDescription: Strings.safeStatusIconDescription)
             button.action = #selector(menuBarClicked)
             button.target = self
         }
@@ -54,22 +54,22 @@ final class MenuBarManager: NSObject {
         
         // Simple menu for scaffolding
         let menu = NSMenu()
-        let statusTitle = store.isSafe ? "Safe" : "Setup Required"
-        menu.addItem(NSMenuItem(title: "CodeMask: \(statusTitle)", action: nil, keyEquivalent: ""))
+        let statusTitle = store.isSafe ? Strings.statusSafe : Strings.statusUnsafe
+        menu.addItem(NSMenuItem(title: "\(Strings.menuItemCodeMaskPrefix) \(statusTitle)", action: nil, keyEquivalent: ""))
         
         if !store.isSafe {
             menu.addItem(NSMenuItem.separator())
-            let prefsItem = NSMenuItem(title: "Open System Preferences", action: #selector(openSystemPreferences), keyEquivalent: ",")
+            let prefsItem = NSMenuItem(title: Strings.menuItemOpenSystemPreferences, action: #selector(openSystemPreferences), keyEquivalent: ",")
             prefsItem.target = self
             menu.addItem(prefsItem)
         }
         
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: Strings.menuItemQuit, action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
         statusItem.menu = menu
         statusItem.button?.performClick(nil) // Show the menu immediately
-        statusItem.menu = nil // Clear it so subsequent clicks can re-evaluate or do custom logic
+        // Note: Keep menu assigned; it will be automatically cleared when user clicks elsewhere or menu closes
     }
     
     @objc private func openSystemPreferences() {
