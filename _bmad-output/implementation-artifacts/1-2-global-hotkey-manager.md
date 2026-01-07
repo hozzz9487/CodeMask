@@ -2,7 +2,7 @@
 
 Status: ready-for-dev
 
-<!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
+<!-- Note: Validation COMPLETED. Improvements applied for technical accuracy and LLM optimization. -->
 
 ## Story
 
@@ -13,73 +13,54 @@ so that I can trigger masking and restoration from any application without switc
 ## Acceptance Criteria
 
 1. **Global Interception**: Application intercepts `Cmd+Opt+C` and `Cmd+Opt+V` events system-wide.
-2. **Background Operation**: Shortcuts work regardless of the active application (Xcode, Browser, Slack) while CodeMask is running in menu bar.
-3. **Action Dispatch**: Triggering a shortcut dispatches the corresponding event (`.didTriggerMasking` or `.didTriggerRestoration`) to the `AppStore`.
-4. **Conflict Handling**: Application does not crash or block system if shortcuts are already registered by another app (fail gracefully/log).
-5. **Zero Dependencies**: Implementation uses native macOS APIs (Carbon/HIToolbox or CGEvent) without external libraries like `HotKey` or `Magnet`.
+2. **Background Operation**: Shortcuts work regardless of the active application (Xcode, Browser, Slack).
+3. **Action Dispatch**: Triggering a shortcut dispatches events (`.didTriggerMasking`, `.didTriggerRestoration`) to the `AppStore`.
+4. **Conflict Handling**: Fail gracefully if shortcuts are already registered (taken by another app).
+5. **Zero Dependencies**: Implementation uses native `Carbon` (`RegisterEventHotKey`) without external libraries.
 
 ## Tasks / Subtasks
 
-- [ ] Create Feature Module `Features/Hotkeys`
-  - [ ] Create `Hotkeys.swift` (Namespace: State/Action)
-  - [ ] Create `GlobalHotkeyManager.swift` (Logic)
-- [ ] Implement Native Hotkey Registration
-  - [ ] Define `Hotkey` struct/enum (Key + Modifiers)
-  - [ ] Implement registration logic using `Carbon` (`RegisterEventHotKey`) OR `CGEvent` tap (Decision: Carbon preferred for specific hotkeys)
-  - [ ] Implement event handler callback
-- [ ] Integrate with `AppStore`
-  - [ ] Add `Hotkeys` module to `AppEnvironment`
-  - [ ] Add `Hotkeys.State` to `AppState`
-  - [ ] Handle `Hotkeys.Action` in `AppReducer` (logging for now, masking logic in future stories)
-- [ ] Error Handling & Permissions
-  - [ ] Verify Input Monitoring permission before registering
-  - [ ] Handle registration failures
-- [ ] Testing
-  - [ ] Unit test `GlobalHotkeyManager` (Mocking system APIs if possible, or isolating logic)
-  - [ ] Integration test: Verify Store receives actions
+- [ ] **Feature Scaffolding**
+  - [ ] Create `CodeMask/Features/Hotkeys/Hotkeys.swift` (Namespace)
+    - Define `enum Hotkeys { struct State... enum Action... }`
+    - Action cases: `.didTriggerMasking`, `.didTriggerRestoration`, `.didFailToRegister(AppError)`
+  - [ ] Create `CodeMask/Features/Hotkeys/GlobalHotkeyManager.swift` (Service)
+- [ ] **Carbon Hotkey Implementation**
+  - [ ] Define `HotkeyID` constants (Masking vs Restoration)
+  - [ ] Implement `registerHotkeys()` using `RegisterEventHotKey`
+  - [ ] Implement `unregisterHotkeys()` to clean up `EventHotKeyRef`
+  - [ ] Implement C-style callback bridge to `GlobalHotkeyManager` instance
+- [ ] **Integration & Safety**
+  - [ ] Add `HotkeyServiceProtocol` to `AppEnvironment`
+  - [ ] Dispatch actions to `AppStore` on `@MainActor`
+  - [ ] **Permission Note**: `Carbon` hotkeys do NOT require Accessibility/Input Monitoring. Do NOT block registration on these permissions.
+- [ ] **Cleanup & Lifecycle**
+  - [ ] Call `unregisterHotkeys()` on `deinit` or app termination to prevent resource leaks.
+- [ ] **Testing & Verification**
+  - [ ] Unit test `GlobalHotkeyManager` logic (mocking the store dispatch)
+  - [ ] Manual test: Verify HUD (if implemented) or Logs trigger on `Cmd+Opt+C/V`
 
 ## Dev Notes
 
-### Technical Requirements
+### Technical Directives
 
-- **API Choice**: Use `Carbon.framework` (specifically `RegisterEventHotKey`) for robust global hotkey handling. It is the standard native way to handle global shortcuts without "Input Monitoring" heavy-handedness (though we have that permission).
-- **Concurrency**: Hotkey callbacks often come on a special thread or main thread loop. Ensure generic `Userinfo` pointer handling is safe and actions are dispatched to `AppStore` on `@MainActor`.
-- **State Management**:
-  - `Hotkeys.State`: might track `isMaskingShortcutRegistered`, `isRestorationShortcutRegistered`.
-  - `Hotkeys.Action`: `.didTriggerMasking`, `.didTriggerRestoration`, `.didFailToRegister(Error)`.
+- **API Choice**: Use `Carbon.framework`. It is the native macOS way to handle global shortcuts without requiring intrusive user permissions.
+- **C-Interop Safety**: Use `Unmanaged.passUnretained(self).toOpaque()` to pass the manager instance as `refCon`, and `Unmanaged<GlobalHotkeyManager>.fromOpaque(refCon).takeUnretainedValue()` inside the C callback to regain context.
+- **Carbon Signature**: Define a unique 4-char signature (e.g., `'CMSK'`) for `EventHotKeyID.signature` to avoid collisions with other apps using the same ID integers.
+- **Concurrency**: Ensure the C-callback dispatches to the `AppStore` using `Task { @MainActor in ... }`.
+- **Error Propagation**: If registration fails (e.g., `eventHotKeyAlreadyRegisteredErr`), dispatch `.didFailToRegister(AppError)` so the central Store can handle visibility.
 
 ### Architecture Compliance
 
 - **Namespace**: `CodeMask/Features/Hotkeys/`
-- **Isolation**: `GlobalHotkeyManager` should be a service injected into `AppEnvironment`.
-- **DI**: Define `HotkeyServiceProtocol` to allow mocking in tests.
-- **Naming**: Actions must be Events: `.didTriggerMasking`, NOT `.performMasking`.
+- **DI Pattern**: Inject `GlobalHotkeyManager` as a dependency in `AppEnvironment`.
+- **Action Naming**: Use event-based naming: `.didTriggerMasking`.
 
-### Developer Guardrails (From Story 1.1 Learnings)
+### Developer Guardrails
 
-- **Resource Management**: If using `CGEvent` or `Carbon` refs, ensure proper cleanup/unregistration on app termination (though OS handles process death, good hygiene is required).
-- **MainActor Safety**: Dispatching to `AppStore` MUST be on MainActor. Use `Task { @MainActor in store.send(...) }` if callback is on background thread.
-- **Error Visibility**: Do not fail silently. If hotkeys fail to register (e.g. taken by another app), log it and update State so UI (future) can warn user.
-
-### Project Structure Notes
-
-- New Directory: `CodeMask/Features/Hotkeys/`
-- Files:
-  - `Hotkeys.swift` (Namespace)
-  - `GlobalHotkeyManager.swift` (Implementation)
-
-### References
-
-- [Architecture: Project Structure](_bmad-output/architecture.md#project-structure--boundaries)
-- [Epic 1.2 Criteria](_bmad-output/epics.md#story-12-global-hotkey-manager)
-
-## Dev Agent Record
-
-### Agent Model Used
-Gemini Pro 1.5 (Simulated)
-
-### Debug Log References
-
-### Completion Notes List
+- **Resource Hygiene**: You MUST unregister hotkeys when the manager is disposed.
+- **Permission Clarity**: `Story 1.1` permissions are for *Guardian Mode*. This story (Hotkeys) should function even if the user has not yet granted Accessibility/Input Monitoring.
 
 ### File List
+- `CodeMask/Features/Hotkeys/Hotkeys.swift`
+- `CodeMask/Features/Hotkeys/GlobalHotkeyManager.swift`
