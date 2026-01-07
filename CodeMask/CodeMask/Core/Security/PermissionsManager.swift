@@ -29,6 +29,7 @@ final class PermissionsManager: PermissionsManagerProtocol {
             options: .defaultTap,
             eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue),
             callback: { _, _, event, _ in
+                // event is non-optional in the Swift signature of the callback
                 // Pass the event through untouched
                 return Unmanaged.passUnretained(event)
             },
@@ -39,7 +40,13 @@ final class PermissionsManager: PermissionsManagerProtocol {
         
         // If we got a tap, we likely have permission.
         // Explicitly check if it is enabled.
-        return CGEvent.tapIsEnabled(tap: validTap)
+        let isEnabled = CGEvent.tapIsEnabled(tap: validTap)
+        
+        // CRITICAL: Disable the tap to release resources and prevent leaks.
+        // Although CFMachPort is ref-counted, explicitly disabling ensures it stops monitoring.
+        CGEvent.tapEnable(tap: validTap, enable: false)
+        
+        return isEnabled
     }
     
     func promptAccessibility() {

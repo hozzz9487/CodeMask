@@ -20,8 +20,9 @@ struct CodeMaskApp: App {
     
     var body: some Scene {
         // No WindowGroup for LSUIElement app
+        // Epic 3: Settings Window will go here
         Settings {
-            ContentView() // Placeholder for settings window
+            EmptyView()
         }
         .commands {
             // Remove standard commands if necessary
@@ -87,6 +88,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 NSApplication.shared.terminate(nil)
             }
+            
+            // Clear error after handling so we can detect future errors
+            AppStore.shared.send(.security(.didClearError))
         }
     }
     
@@ -99,9 +103,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AppStore.shared.send(.security(.permissions(.didCheckStatus(accessibility: isAx, inputMonitoring: isInput))))
         
         // If not trusted, prompt and signal error state
-        if !isAx {
+        if !isAx || !isInput {
             AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
-            permissions.promptAccessibility()
+            if !isAx {
+                permissions.promptAccessibility()
+            }
         }
     }
 }

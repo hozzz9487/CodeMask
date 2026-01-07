@@ -7,11 +7,13 @@
 
 import AppKit
 import SwiftUI
+import os
 
 @MainActor
 final class MenuBarManager: NSObject {
     private var statusItem: NSStatusItem!
     private let store: AppStore
+    private let logger = Logger(subsystem: "com.edsncfw.CodeMask", category: "MenuBarManager")
     
     init(store: AppStore) {
         self.store = store
@@ -21,13 +23,15 @@ final class MenuBarManager: NSObject {
     }
     
     private func startObservation() {
+        // Continuous observation of store.isSafe
         withObservationTracking {
-            // Access properties to track
             _ = store.isSafe
         } onChange: {
             Task { @MainActor [weak self] in
-                self?.updateIcon()
-                self?.startObservation()
+                guard let self = self else { return }
+                self.updateIcon()
+                // Re-register observation for next change
+                self.startObservation()
             }
         }
     }
@@ -48,14 +52,18 @@ final class MenuBarManager: NSObject {
     
     @objc private func menuBarClicked() {
         // Future: Toggle popover or show menu
-        print("Menu bar clicked")
+        logger.debug("Menu bar clicked")
         
         // Simple menu for scaffolding
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "CodeMask: " + (store.isSafe ? "Safe" : "Setup Required"), action: nil, keyEquivalent: ""))
+        let statusTitle = store.isSafe ? "Safe" : "Setup Required"
+        menu.addItem(NSMenuItem(title: "CodeMask: \(statusTitle)", action: nil, keyEquivalent: ""))
         
         if !store.isSafe {
-            menu.addItem(NSMenuItem(title: "Open System Preferences", action: #selector(openSystemPreferences), keyEquivalent: ""))
+            menu.addItem(NSMenuItem.separator())
+            let prefsItem = NSMenuItem(title: "Open System Preferences", action: #selector(openSystemPreferences), keyEquivalent: ",")
+            prefsItem.target = self
+            menu.addItem(prefsItem)
         }
         
         menu.addItem(NSMenuItem.separator())
@@ -76,13 +84,16 @@ final class MenuBarManager: NSObject {
     func updateIcon() {
         guard let button = statusItem.button else { return }
         
-        let symbolName = store.isSafe ? "lock.shield.fill" : "lock.shield"
-        let config = NSImage.SymbolConfiguration(paletteColors: [store.isSafe ? .systemBlue : .systemGray])
+        let symbolName = store.isSafe ? "lock.shield.fill" : "lock.shield.warning"
+        // Use Warning symbol for unsafe state
+        
+        let config = NSImage.SymbolConfiguration(paletteColors: [store.isSafe ? .systemBlue : .systemOrange])
         
         if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?.withSymbolConfiguration(config) {
             button.image = image
         } else {
-            // Fallback for missing symbol
+            // Fallback for missing symbol and log failure
+            logger.error("Failed to load symbol: \(symbolName)")
             button.title = "CM"
         }
     }

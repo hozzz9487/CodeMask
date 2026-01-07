@@ -4,27 +4,15 @@
 //
 //  Created by Edison on 2026/1/5.
 //
+//  This file is currently a placeholder for the future Settings/Preferences window (Epic 3).
+//  It is retained to preserve project references until the settings UI is implemented.
+//
 
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "gear")
-                .imageScale(.large)
-                .font(.system(size: 40))
-            
-            Text("CodeMask Settings")
-                .font(.title)
-            
-            Text("Settings implementation coming in Epic 3.")
-                .foregroundStyle(.secondary)
-        }
-        .padding(50)
-        .frame(minWidth: 400, minHeight: 300)
+        Text("Settings Window Placeholder")
+            .padding()
     }
-}
-
-#Preview {
-    ContentView()
 }

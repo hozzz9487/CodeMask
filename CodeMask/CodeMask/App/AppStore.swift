@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 // MARK: - Global State
 @MainActor
@@ -52,7 +51,9 @@ final class AppStore {
             
         case .didEncounterError(let error):
             security.lastError = error
-            // In a real app, we might also toggle a flag to show an alert
+            
+        case .didClearError:
+            security.lastError = nil
         }
     }
 }
@@ -87,6 +88,7 @@ enum Security {
     enum Action {
         case permissions(Permissions.Action)
         case didEncounterError(AppError)
+        case didClearError
     }
     
     enum Permissions {
