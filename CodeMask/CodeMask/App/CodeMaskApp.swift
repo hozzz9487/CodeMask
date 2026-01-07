@@ -21,7 +21,7 @@ struct CodeMaskApp: App {
     var body: some Scene {
         // No WindowGroup for LSUIElement app
         Settings {
-            EmptyView() // Placeholder for settings window
+            ContentView() // Placeholder for settings window
         }
         .commands {
             // Remove standard commands if necessary
@@ -44,13 +44,55 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Initialize Menu Bar Manager
         menuBarManager = MenuBarManager(store: AppStore.shared)
         
+        // Start observing state for errors
+        startObservation()
+        
         // Trigger initial permission check
         checkPermissions()
     }
     
     @MainActor
+    private func startObservation() {
+        withObservationTracking {
+            _ = AppStore.shared.security.lastError
+        } onChange: {
+            Task { @MainActor [weak self] in
+                self?.handleError(AppStore.shared.security.lastError)
+                self?.startObservation()
+            }
+        }
+    }
+    
+    @MainActor
+    private func handleError(_ error: AppError?) {
+        guard let error = error else { return }
+        
+        if error == .permissionsCheckFailed {
+            let alert = NSAlert()
+            alert.messageText = "Permissions Required"
+            alert.informativeText = "CodeMask needs Accessibility and Input Monitoring permissions to function. Please grant them in System Settings."
+            alert.alertStyle = .critical
+            alert.addButton(withTitle: "Open Settings")
+            alert.addButton(withTitle: "Quit")
+            
+            // Bring app to front so alert is visible
+            NSApp.activate(ignoringOtherApps: true)
+            
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                // Open Settings
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    NSWorkspace.shared.open(url)
+                }
+            } else {
+                NSApplication.shared.terminate(nil)
+            }
+        }
+    }
+    
+    @MainActor
     func checkPermissions() {
-        let permissions = PermissionsManager()
+        let permissions = AppStore.shared.environment.permissionsManager
         let isAx = permissions.checkAccessibility()
         let isInput = permissions.checkInputMonitoring()
         

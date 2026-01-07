@@ -20,26 +20,26 @@ final class PermissionsManager: PermissionsManagerProtocol {
     }
     
     func checkInputMonitoring() -> Bool {
-        // Attempt to create an event tap.
-        // If we lack Input Monitoring permission, this returns nil (or a disabled tap).
-        // We use a dummy tap that doesn't actually intercept anything important.
+        // Attempt to create an event tap to check for Input Monitoring permission.
+        // If permission is missing, this usually returns nil.
+        // We use a dummy tap that passes events through.
         let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: CGEventMask(1 << CGEventType.keyDown.rawValue),
-            callback: { _, _, _, _ in return Unmanaged.passUnretained(CGEvent(source: nil)!) },
+            callback: { _, _, event, _ in
+                // Pass the event through untouched
+                return Unmanaged.passUnretained(event)
+            },
             userInfo: nil
         )
         
         guard let validTap = tap else { return false }
         
-        // If the tap is created but disabled, it might mean we lack permission (or it was disabled by system)
-        let isEnabled = CGEvent.tapIsEnabled(tap: validTap)
-        
-        // Clean up not strictly necessary for CFMachPort but good practice if we were keeping it.
-        // For a check, we just discard it.
-        return isEnabled
+        // If we got a tap, we likely have permission.
+        // Explicitly check if it is enabled.
+        return CGEvent.tapIsEnabled(tap: validTap)
     }
     
     func promptAccessibility() {

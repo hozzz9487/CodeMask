@@ -9,13 +9,19 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
+        VStack(spacing: 20) {
+            Image(systemName: "gear")
                 .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+                .font(.system(size: 40))
+            
+            Text("CodeMask Settings")
+                .font(.title)
+            
+            Text("Settings implementation coming in Epic 3.")
+                .foregroundStyle(.secondary)
         }
-        .padding()
+        .padding(50)
+        .frame(minWidth: 400, minHeight: 300)
     }
 }
 

@@ -17,6 +17,19 @@ final class MenuBarManager: NSObject {
         self.store = store
         super.init()
         setupStatusItem()
+        startObservation()
+    }
+    
+    private func startObservation() {
+        withObservationTracking {
+            // Access properties to track
+            _ = store.isSafe
+        } onChange: {
+            Task { @MainActor [weak self] in
+                self?.updateIcon()
+                self?.startObservation()
+            }
+        }
     }
     
     private func setupStatusItem() {
@@ -25,8 +38,6 @@ final class MenuBarManager: NSObject {
         if let button = statusItem.button {
             // Default "Safe" icon (SFSymbol)
             // Use system symbols: lock.shield (safe), lock.shield.warning (danger), etc.
-            // For MVP scaffolding, we just set a static image initially.
-            // In a real app, this would observe Store state.
             button.image = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: "CodeMask Safe")
             button.action = #selector(menuBarClicked)
             button.target = self
@@ -42,12 +53,24 @@ final class MenuBarManager: NSObject {
         // Simple menu for scaffolding
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "CodeMask: " + (store.isSafe ? "Safe" : "Setup Required"), action: nil, keyEquivalent: ""))
+        
+        if !store.isSafe {
+            menu.addItem(NSMenuItem(title: "Open System Preferences", action: #selector(openSystemPreferences), keyEquivalent: ""))
+        }
+        
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
         statusItem.menu = menu
         statusItem.button?.performClick(nil) // Show the menu immediately
         statusItem.menu = nil // Clear it so subsequent clicks can re-evaluate or do custom logic
+    }
+    
+    @objc private func openSystemPreferences() {
+        // Open Security & Privacy settings
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
     
     func updateIcon() {

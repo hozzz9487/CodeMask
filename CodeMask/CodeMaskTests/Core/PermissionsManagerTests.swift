@@ -17,7 +17,7 @@ final class PermissionsManagerTests: XCTestCase {
     
     func testCheckInputMonitoring_ReturnsFalseInitially() {
         // In a test environment (and simulator), Input Monitoring is usually false/restricted.
-        // The hardcoded 'true' should cause this to fail if we expect strict checking.
+        // We verify that the check returns false when permissions are not explicitly granted.
         let status = sut.checkInputMonitoring()
         XCTAssertFalse(status, "Input Monitoring should be false by default in test/sandbox environment")
     }
