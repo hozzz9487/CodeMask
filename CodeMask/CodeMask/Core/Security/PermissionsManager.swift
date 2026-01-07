@@ -7,6 +7,7 @@
 
 import AppKit
 import ApplicationServices
+import os
 
 protocol PermissionsManagerProtocol {
     func checkAccessibility() -> Bool
@@ -18,6 +19,7 @@ final class PermissionsManager: PermissionsManagerProtocol {
     typealias TapProvider = (CGEventTapLocation, CGEventTapPlacement, CGEventTapOptions, CGEventMask, @escaping CGEventTapCallBack, UnsafeMutableRawPointer?) -> CFMachPort?
     
     private let tapProvider: TapProvider
+    private let logger = Logger(subsystem: "com.edsncfw.CodeMask", category: "PermissionsManager")
     
     init(tapProvider: @escaping TapProvider = CGEvent.tapCreate) {
         self.tapProvider = tapProvider
@@ -28,17 +30,16 @@ final class PermissionsManager: PermissionsManagerProtocol {
     }
     
     func checkInputMonitoring() -> Bool {
-        // Attempt to create an event tap to check for Input Monitoring permission.
-        // If permission is missing, this usually returns nil.
-        // We use a dummy tap that passes events through.
+        // Check Input Monitoring permission by attempting to create an event tap
+        // If permission is not granted, tapCreate returns nil immediately
+        // If permission is granted, tap is created successfully
+        
         let tap = tapProvider(
             .cgSessionEventTap,
             .headInsertEventTap,
             .defaultTap,
             CGEventMask(1 << CGEventType.keyDown.rawValue),
             { _, _, event, _ in
-                // Fix: CGEvent callback nil guard - crash on permission denied
-                // Use a local variable to bridge to optional if necessary
                 let optionalEvent: CGEvent? = event
                 guard let validEvent = optionalEvent else { return nil }
                 return Unmanaged.passUnretained(validEvent)
@@ -46,15 +47,17 @@ final class PermissionsManager: PermissionsManagerProtocol {
             nil
         )
         
-        guard let validTap = tap else { return false }
+        guard let validTap = tap else {
+            self.logger.debug("checkInputMonitoring: tap creation failed -> DENIED")
+            return false
+        }
         
-        // CRITICAL: Ensure the tap is disabled even if tapIsEnabled throws an exception.
-        // This prevents resource leaks on error paths.
+        // Tap was created - check if it can actually be enabled
+        CGEvent.tapEnable(tap: validTap, enable: true)
         defer { CGEvent.tapEnable(tap: validTap, enable: false) }
         
-        // If we got a tap, we likely have permission.
-        // Explicitly check if it is enabled.
         let isEnabled = CGEvent.tapIsEnabled(tap: validTap)
+        self.logger.debug("checkInputMonitoring: tap created and enabled -> \(isEnabled ? "GRANTED" : "DENIED")")
         
         return isEnabled
     }

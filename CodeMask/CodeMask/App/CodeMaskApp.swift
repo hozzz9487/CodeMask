@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import os
 
 @main
 struct CodeMaskApp: App {
@@ -32,6 +33,7 @@ struct CodeMaskApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarManager: MenuBarManager?
     private var cancellables = Set<AnyCancellable>()
+    private let logger = Logger(subsystem: "com.edsncfw.CodeMask", category: "AppDelegate")
     
     // Track if we've already shown the initial permission alert
     private var hasShownInitialPermissionAlert = false
@@ -52,12 +54,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &cancellables)
         
-        // Listen for app becoming active to re-check permissions
-        // (user might have returned from System Preferences)
+        // Listen for app becoming active
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(applicationDidBecomeActive),
             name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        
+        // Listen for workspace app activation (when user returns from System Settings)
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceDidActivateApplication),
+            name: NSWorkspace.didActivateApplicationNotification,
+            object: nil
+        )
+        
+        // Listen for System Settings window changes (when user exits Settings app)
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceDidHideApplication),
+            name: NSWorkspace.didHideApplicationNotification,
             object: nil
         )
         
@@ -68,15 +85,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     @objc private func applicationDidBecomeActive() {
         // Re-check permissions when app returns to foreground
-        // This allows immediate icon update if user changed settings
         checkPermissions()
+    }
+    
+    @MainActor
+    @objc private func workspaceDidActivateApplication(_ notification: Notification) {
+        // Check permissions whenever any app is activated
+        // This catches the moment user leaves System Settings or returns to another app
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            self?.checkPermissions()
+        }
+    }
+    
+    @MainActor
+    @objc private func workspaceDidHideApplication(_ notification: Notification) {
+        // When System Settings is hidden (user closes or minimizes it), check permissions
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+            return
+        }
+        
+        let bundleId = app.bundleIdentifier ?? ""
+        if bundleId.contains("systempreferences") || bundleId.contains("system.settings") {
+            // User just closed System Settings - check permissions immediately
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+                self?.checkPermissions()
+            }
+        }
     }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-    
-    // MARK: - Permission Management
     
     @MainActor
     private func handlePermissionStateChange() {
@@ -84,15 +123,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let isInput = AppStore.shared.environment.permissionsManager.checkInputMonitoring()
         let currentState = (isAx, isInput)
         
-        // Only show alert if this is the FIRST time permissions failed on launch
-        // OR if permissions were revoked after being granted
-        let shouldShowAlert = !AppStore.shared.isSafe && (
-            !hasShownInitialPermissionAlert ||
-            (lastPermissionState?.0 == true && !isAx) ||
-            (lastPermissionState?.1 == true && !isInput)
-        )
+        // Detect if permissions changed from granted to revoked
+        let axRevoked = lastPermissionState?.0 == true && !isAx
+        let inputRevoked = lastPermissionState?.1 == true && !isInput
         
-        if shouldShowAlert {
+        // Handle Input Monitoring revoked - special case requiring app restart
+        if inputRevoked {
+            showRestartAlert()
+        }
+        // Handle Accessibility revoked or initial permission failure
+        else if !AppStore.shared.isSafe && ((!hasShownInitialPermissionAlert && lastPermissionState == nil) || axRevoked) {
             hasShownInitialPermissionAlert = true
             showPermissionAlert()
         }
@@ -105,9 +145,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let alert = NSAlert()
         alert.messageText = Strings.permissionAlertTitle
         alert.informativeText = Strings.permissionAlertMessage
-        alert.alertStyle = .warning  // Changed from critical to warning
+        alert.alertStyle = .warning
         alert.addButton(withTitle: Strings.openSettingsButton)
-        alert.addButton(withTitle: "稍後提醒")  // "Remind Later" option
+        alert.addButton(withTitle: Strings.remindLaterButton)
         
         // Bring app to front so alert is visible
         NSApp.activate(ignoringOtherApps: true)
@@ -123,6 +163,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @MainActor
+    private func showRestartAlert() {
+        let alert = NSAlert()
+        alert.messageText = Strings.restartAlertTitle
+        alert.informativeText = Strings.restartAlertMessage
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: Strings.restartButton)
+        alert.addButton(withTitle: Strings.remindLaterButton)
+        
+        // Bring app to front so alert is visible
+        NSApp.activate(ignoringOtherApps: true)
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            // Restart the app
+            restartApp()
+        }
+    }
+    
+    private func restartApp() {
+        // Get the path to the app bundle
+        guard let appPath = Bundle.main.bundlePath as String? else { return }
+        
+        // Use a small delay to allow the alert to close first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // Launch new instance of the app
+            let task = Process()
+            task.launchPath = "/usr/bin/open"
+            task.arguments = [appPath]
+            
+            do {
+                try task.run()
+                // Now quit the current app
+                NSApp.terminate(nil)
+            } catch {
+                self.logger.error("Failed to restart app: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    @MainActor
     func checkPermissions() {
         let permissions = AppStore.shared.environment.permissionsManager
         let isAx = permissions.checkAccessibility()
@@ -131,7 +211,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AppStore.shared.send(.security(.permissions(.didCheckStatus(accessibility: isAx, inputMonitoring: isInput))))
         
         // Only prompt for accessibility if not granted AND we haven't shown alert yet
-        // This prevents duplicate prompts
         if !isAx && !hasShownInitialPermissionAlert {
             permissions.promptAccessibility()
         }

@@ -47,4 +47,14 @@ enum Strings {
     static let safeStatusIconDescription = "CodeMask 安全"
     
     static let lockShieldIconDescription = "lock.shield"
+    
+    // MARK: - Restart Notification Strings
+    
+    static let restartAlertTitle = "權限已改變"
+    
+    static let restartAlertMessage = "輸入監控權限已改變。為了確保 CodeMask 正常運作，請重啟應用。"
+    
+    static let restartButton = "立即重啟"
+    
+    static let remindLaterButton = "稍後提醒"
 }

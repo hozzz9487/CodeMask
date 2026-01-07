@@ -32,6 +32,15 @@ final class MenuBarManager: NSObject {
                 self?.updateIcon()
             }
             .store(in: &cancellables)
+        
+        // Also observe isSafe state changes to ensure icon updates
+        // This catches edge cases where permissionChangedPublisher might be missed
+        store.isSafePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateIcon()
+            }
+            .store(in: &cancellables)
     }
     
     private func setupStatusItem() {
