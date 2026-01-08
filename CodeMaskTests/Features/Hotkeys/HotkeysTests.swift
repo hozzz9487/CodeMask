@@ -9,20 +9,39 @@ final class HotkeysTests: XCTestCase {
         XCTAssertFalse(state.isMaskingRegistered)
         XCTAssertFalse(state.isRestorationRegistered)
         XCTAssertNil(state.lastError)
+        XCTAssertNil(state.lastTriggeredHotkey)
+        XCTAssertNil(state.lastHotkeyTriggerTime)
         
         // Verify Action cases exist
-        let _ = Hotkeys.Action.didTriggerMasking
-        let _ = Hotkeys.Action.didTriggerRestoration
-        let _ = Hotkeys.Action.didFailToRegister(.unknown)
+        XCTAssertEqual(Hotkeys.Action.didTriggerMasking, Hotkeys.Action.didTriggerMasking)
+        XCTAssertEqual(Hotkeys.Action.didTriggerRestoration, Hotkeys.Action.didTriggerRestoration)
+        XCTAssertEqual(Hotkeys.Action.didFailToRegister(.unknown), Hotkeys.Action.didFailToRegister(.unknown))
     }
     
-    func testAppStoreIntegration() {
+    func testAppStoreIntegration_Error() {
         // Verify AppStore has hotkeys state
         let store = AppStore.shared
         XCTAssertNotNil(store.hotkeys)
         
         // Simulate a hotkey error action
-        store.send(.hotkeys(.didFailToRegister(.unknown)))
-        XCTAssertEqual(store.hotkeys.lastError, .unknown)
+        let error = AppError.hotkeyConflict(hotkeyName: "Test")
+        store.send(.hotkeys(.didFailToRegister(error)))
+        XCTAssertEqual(store.hotkeys.lastError, error)
+    }
+    
+    func testAppStoreIntegration_Trigger() {
+        let store = AppStore.shared
+        
+        // Simulate masking trigger
+        store.send(.hotkeys(.didTriggerMasking))
+        XCTAssertEqual(store.hotkeys.lastTriggeredHotkey, .didTriggerMasking)
+        XCTAssertNotNil(store.hotkeys.lastHotkeyTriggerTime)
+        
+        let firstTriggerTime = store.hotkeys.lastHotkeyTriggerTime!
+        
+        // Simulate restoration trigger
+        store.send(.hotkeys(.didTriggerRestoration))
+        XCTAssertEqual(store.hotkeys.lastTriggeredHotkey, .didTriggerRestoration)
+        XCTAssertGreaterThanOrEqual(store.hotkeys.lastHotkeyTriggerTime!, firstTriggerTime)
     }
 }

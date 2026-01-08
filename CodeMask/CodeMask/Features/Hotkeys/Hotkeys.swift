@@ -17,9 +17,12 @@ enum Hotkeys {
         var isMaskingRegistered: Bool = false
         var isRestorationRegistered: Bool = false
         var lastError: AppError?
+        
+        var lastTriggeredHotkey: Hotkeys.Action?
+        var lastHotkeyTriggerTime: Date?
     }
     
-    enum Action {
+    enum Action: Equatable {
         case didTriggerMasking
         case didTriggerRestoration
         case didFailToRegister(AppError)

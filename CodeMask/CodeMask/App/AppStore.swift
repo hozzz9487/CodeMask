@@ -61,11 +61,15 @@ final class AppStore {
     private func reduce(hotkeys action: Hotkeys.Action) {
         switch action {
         case .didTriggerMasking:
-            // Logic handled by side effect/manager, store only tracks state if needed
-            break
+            hotkeys.lastTriggeredHotkey = action
+            hotkeys.lastHotkeyTriggerTime = Date()
+            // Future: Trigger masking engine (Story 1.4)
+            
         case .didTriggerRestoration:
-            // Logic handled by side effect/manager
-            break
+            hotkeys.lastTriggeredHotkey = action
+            hotkeys.lastHotkeyTriggerTime = Date()
+            // Future: Trigger restoration engine (Story 1.6)
+            
         case .didFailToRegister(let error):
             hotkeys.lastError = error
         }
@@ -112,11 +116,15 @@ enum AppAction {
 
 enum AppError: Error, Equatable {
     case permissionsCheckFailed
+    case hotkeyConflict(hotkeyName: String)
+    case invalidConfiguration(String)
     case unknown
     
     static func == (lhs: AppError, rhs: AppError) -> Bool {
         switch (lhs, rhs) {
         case (.permissionsCheckFailed, .permissionsCheckFailed): return true
+        case (.hotkeyConflict(let l), .hotkeyConflict(let r)): return l == r
+        case (.invalidConfiguration(let l), .invalidConfiguration(let r)): return l == r
         case (.unknown, .unknown): return true
         default: return false
         }
