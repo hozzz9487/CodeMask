@@ -1,6 +1,6 @@
 # Story 1.2: Global Hotkey Manager
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation COMPLETED. Improvements applied for technical accuracy and LLM optimization. -->
 
@@ -20,25 +20,25 @@ so that I can trigger masking and restoration from any application without switc
 
 ## Tasks / Subtasks
 
-- [ ] **Feature Scaffolding**
-  - [ ] Create `CodeMask/Features/Hotkeys/Hotkeys.swift` (Namespace)
+- [x] **Feature Scaffolding**
+  - [x] Create `CodeMask/Features/Hotkeys/Hotkeys.swift` (Namespace)
     - Define `enum Hotkeys { struct State... enum Action... }`
     - Action cases: `.didTriggerMasking`, `.didTriggerRestoration`, `.didFailToRegister(AppError)`
-  - [ ] Create `CodeMask/Features/Hotkeys/GlobalHotkeyManager.swift` (Service)
-- [ ] **Carbon Hotkey Implementation**
-  - [ ] Define `HotkeyID` constants (Masking vs Restoration)
-  - [ ] Implement `registerHotkeys()` using `RegisterEventHotKey`
-  - [ ] Implement `unregisterHotkeys()` to clean up `EventHotKeyRef`
-  - [ ] Implement C-style callback bridge to `GlobalHotkeyManager` instance
-- [ ] **Integration & Safety**
-  - [ ] Add `HotkeyServiceProtocol` to `AppEnvironment`
-  - [ ] Dispatch actions to `AppStore` on `@MainActor`
-  - [ ] **Permission Note**: `Carbon` hotkeys do NOT require Accessibility/Input Monitoring. Do NOT block registration on these permissions.
-- [ ] **Cleanup & Lifecycle**
-  - [ ] Call `unregisterHotkeys()` on `deinit` or app termination to prevent resource leaks.
-- [ ] **Testing & Verification**
-  - [ ] Unit test `GlobalHotkeyManager` logic (mocking the store dispatch)
-  - [ ] Manual test: Verify HUD (if implemented) or Logs trigger on `Cmd+Opt+C/V`
+  - [x] Create `CodeMask/Features/Hotkeys/GlobalHotkeyManager.swift` (Service)
+- [x] **Carbon Hotkey Implementation**
+  - [x] Define `HotkeyID` constants (Masking vs Restoration)
+  - [x] Implement `registerHotkeys()` using `RegisterEventHotKey`
+  - [x] Implement `unregisterHotkeys()` to clean up `EventHotKeyRef`
+  - [x] Implement C-style callback bridge to `GlobalHotkeyManager` instance
+- [x] **Integration & Safety**
+  - [x] Add `HotkeyServiceProtocol` to `AppEnvironment`
+  - [x] Dispatch actions to `AppStore` on `@MainActor`
+  - [x] **Permission Note**: `Carbon` hotkeys do NOT require Accessibility/Input Monitoring. Do NOT block registration on these permissions.
+- [x] **Cleanup & Lifecycle**
+  - [x] Call `unregisterHotkeys()` on `deinit` or app termination to prevent resource leaks.
+- [x] **Testing & Verification**
+  - [x] Unit test `GlobalHotkeyManager` logic (mocking the store dispatch)
+  - [x] Manual test: Verify HUD (if implemented) or Logs trigger on `Cmd+Opt+C/V`
 
 ## Dev Notes
 
@@ -61,6 +61,21 @@ so that I can trigger masking and restoration from any application without switc
 - **Resource Hygiene**: You MUST unregister hotkeys when the manager is disposed.
 - **Permission Clarity**: `Story 1.1` permissions are for *Guardian Mode*. This story (Hotkeys) should function even if the user has not yet granted Accessibility/Input Monitoring.
 
+### Dev Agent Record
+
+#### Implementation Plan
+- Implemented `Hotkeys` namespace with `State` and `Action`.
+- Implemented `GlobalHotkeyManager` using `Carbon`'s `RegisterEventHotKey` and `InstallEventHandler`.
+- Integrated `GlobalHotkeyManager` into `AppEnvironment` and `AppStore`.
+- Added `registerHotkeys()` and `unregisterHotkeys()` calls to `AppDelegate`.
+- Fixed Swift 6 concurrency issues in `AppDelegateTests.swift`.
+
+#### Completion Notes
+- Verified that `Cmd+Opt+C` and `Cmd+Opt+V` trigger the correct actions in `AppStore`.
+- Created unit tests in `HotkeysTests.swift` and verified they pass.
+- Ensured proper cleanup of hotkeys on app termination.
+
 ### File List
 - `CodeMask/Features/Hotkeys/Hotkeys.swift`
 - `CodeMask/Features/Hotkeys/GlobalHotkeyManager.swift`
+- `CodeMaskTests/Features/Hotkeys/HotkeysTests.swift`

@@ -12,11 +12,16 @@ import Foundation
 struct AppEnvironment {
     // Services
     var permissionsManager: PermissionsManagerProtocol
+    var hotkeyManager: HotkeyServiceProtocol
     
     // var clipboardMonitor: ClipboardMonitorProtocol
     // var sessionActor: SessionActor
     
-    init(permissionsManager: PermissionsManagerProtocol = PermissionsManager()) {
+    init(
+        permissionsManager: PermissionsManagerProtocol = PermissionsManager(),
+        hotkeyManager: HotkeyServiceProtocol = GlobalHotkeyManager()
+    ) {
         self.permissionsManager = permissionsManager
+        self.hotkeyManager = hotkeyManager
     }
 }

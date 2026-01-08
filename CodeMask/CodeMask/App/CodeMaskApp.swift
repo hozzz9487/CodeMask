@@ -46,6 +46,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Initialize Menu Bar Manager
         menuBarManager = MenuBarManager(store: AppStore.shared)
         
+        // Register Global Hotkeys
+        AppStore.shared.environment.hotkeyManager.registerHotkeys()
+        
         // Only show error alert on permission state CHANGES, not every check
         AppStore.shared.permissionChangedPublisher
             .receive(on: DispatchQueue.main)
@@ -80,6 +83,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Perform initial permission check on launch
         checkPermissions()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Unregister hotkeys on app termination
+        AppStore.shared.environment.hotkeyManager.unregisterHotkeys()
     }
     
     @MainActor
