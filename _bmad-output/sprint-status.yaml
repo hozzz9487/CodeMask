@@ -43,7 +43,7 @@ development_status:
   epic-1: in-progress
   1-1-core-app-permissions-scaffolding: done
   1-2-global-hotkey-manager: done
-  1-3-in-memory-session-storage-secure: backlog
+  1-3-in-memory-session-storage-secure: ready-for-dev
   1-4-basic-masking-engine-regex: backlog
   1-5-the-masking-loop-copy: backlog
   1-6-the-restoration-loop-paste: backlog
