@@ -13,15 +13,17 @@ struct AppEnvironment {
     // Services
     var permissionsManager: PermissionsManagerProtocol
     var hotkeyManager: HotkeyServiceProtocol
+    var session: SessionStorageProtocol
     
     // var clipboardMonitor: ClipboardMonitorProtocol
-    // var sessionActor: SessionActor
     
     init(
         permissionsManager: PermissionsManagerProtocol = PermissionsManager(),
-        hotkeyManager: HotkeyServiceProtocol = GlobalHotkeyManager()
+        hotkeyManager: HotkeyServiceProtocol = GlobalHotkeyManager(),
+        session: SessionStorageProtocol = SessionActor()
     ) {
         self.permissionsManager = permissionsManager
         self.hotkeyManager = hotkeyManager
+        self.session = session
     }
 }

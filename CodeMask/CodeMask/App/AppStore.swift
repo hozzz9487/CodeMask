@@ -21,6 +21,7 @@ final class AppStore {
     // Feature States
     var security = Security.State()
     var hotkeys = Hotkeys.State()
+    var session = Session.State()
     
     // Track previous permission state to detect changes
     @ObservationIgnored private var previousPermissionState: Security.Permissions.State? = nil
@@ -54,10 +55,28 @@ final class AppStore {
             
         case .hotkeys(let action):
             reduce(hotkeys: action)
+            
+        case .session(let action):
+            reduce(session: action)
         }
     }
     
     // MARK: - Reducers
+    private func reduce(session action: Session.Action) {
+        switch action {
+        case .didSecureData(let token):
+            session.sessionID = token
+            
+        case .didRetrieveData:
+            // Transient data, not stored in state
+            break
+            
+        case .didFail(let error):
+            security.lastError = error
+            errorSubject.send(error)
+        }
+    }
+    
     private func reduce(hotkeys action: Hotkeys.Action) {
         switch action {
         case .didTriggerMasking:
@@ -112,6 +131,7 @@ enum AppAction {
     case didLaunch
     case security(Security.Action)
     case hotkeys(Hotkeys.Action)
+    case session(Session.Action)
 }
 
 enum AppError: Error, Equatable {

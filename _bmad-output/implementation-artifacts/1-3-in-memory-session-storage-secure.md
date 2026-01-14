@@ -1,6 +1,6 @@
 # Story 1.3: In-Memory Session Storage (Secure)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation COMPLETED. Improvements applied for Critical Security Safety. -->
 
@@ -33,36 +33,36 @@ So that no trace of my secrets is ever written to persistent storage.
 
 ## Tasks / Subtasks
 
-- [ ] **Core Security Infrastructure**
-    - [ ] Create `CodeMask/Core/Security/SecureBuffer.swift`
-        - [ ] **Critical**: Use `posix_memalign` to allocate memory aligned to `vm_page_size`.
-        - [ ] **Critical**: Round up allocation size to nearest `vm_page_size` multiple.
-        - [ ] Implement `init(string: String)`: Copy bytes -> `mlock` the full page range.
-        - [ ] Implement `deinit`:
-            - [ ] Use `memset_s` (or secure equivalent) to zero memory (Prevent Dead Store Elimination).
-            - [ ] Call `munlock` on the full page range.
-            - [ ] `free` the pointer.
-        - [ ] Mark class as `final` and **non-Sendable** (do not conform to `Sendable`).
-- [ ] **Session Feature Scaffolding**
-    - [ ] Create `CodeMask/Features/Session/Session.swift` (Namespace)
-        - [ ] Define `State` (holding `sessionID`).
-        - [ ] Define `Action` cases: `.didSecureData(token: UUID)`, `.didRetrieveData(content: String?)`, `.didFail(AppError)`.
-- [ ] **Session Actor Implementation**
-    - [ ] Create `CodeMask/Features/Session/SessionActor.swift`
-        - [ ] Implement `actor SessionActor` conforming to `SessionStorageProtocol`.
-        - [ ] Internal storage: `private var storage: [UUID: SecureBuffer]`.
-        - [ ] Func `store(content: String) -> UUID`.
-        - [ ] Func `retrieve(id: UUID) -> String?`.
-        - [ ] Implement "Check-After-Await" pattern for any async reentrancy.
-- [ ] **Helper Components**
-    - [ ] Create `CodeMask/Features/Session/TokenGenerator.swift` (Simple UUID wrapper).
-- [ ] **Integration**
-    - [ ] Add `SessionStorageProtocol` to `AppEnvironment`.
-    - [ ] Integrate with `AppStore` (Reducer updates).
-- [ ] **Testing**
-    - [ ] Unit Test `SecureBuffer` (verify lifecycle).
-    - [ ] Unit Test `SessionActor` (store/retrieve logic).
-    - [ ] **Critical**: Add `REQUIRE_MLOCK=1` check in tests.
+- [x] **Core Security Infrastructure**
+    - [x] Create `CodeMask/Core/Security/SecureBuffer.swift`
+        - [x] **Critical**: Use `posix_memalign` to allocate memory aligned to `vm_page_size`.
+        - [x] **Critical**: Round up allocation size to nearest `vm_page_size` multiple.
+        - [x] Implement `init(string: String)`: Copy bytes -> `mlock` the full page range.
+        - [x] Implement `deinit`:
+            - [x] Use `memset_s` (or secure equivalent) to zero memory (Prevent Dead Store Elimination).
+            - [x] Call `munlock` on the full page range.
+            - [x] `free` the pointer.
+        - [x] Mark class as `final` and **non-Sendable** (do not conform to `Sendable`).
+- [x] **Session Feature Scaffolding**
+    - [x] Create `CodeMask/Features/Session/Session.swift` (Namespace)
+        - [x] Define `State` (holding `sessionID`).
+        - [x] Define `Action` cases: `.didSecureData(token: UUID)`, `.didRetrieveData(content: String?)`, `.didFail(AppError)`.
+- [x] **Session Actor Implementation**
+    - [x] Create `CodeMask/Features/Session/SessionActor.swift`
+        - [x] Implement `actor SessionActor` conforming to `SessionStorageProtocol`.
+        - [x] Internal storage: `private var storage: [UUID: SecureBuffer]`.
+        - [x] Func `store(content: String) -> UUID`.
+        - [x] Func `retrieve(id: UUID) -> String?`.
+        - [x] Implement "Check-After-Await" pattern for any async reentrancy.
+- [x] **Helper Components**
+    - [x] Create `CodeMask/Features/Session/TokenGenerator.swift` (Simple UUID wrapper).
+- [x] **Integration**
+    - [x] Add `SessionStorageProtocol` to `AppEnvironment`.
+    - [x] Integrate with `AppStore` (Reducer updates).
+- [x] **Testing**
+    - [x] Unit Test `SecureBuffer` (verify lifecycle).
+    - [x] Unit Test `SessionActor` (store/retrieve logic).
+    - [x] **Critical**: Add `REQUIRE_MLOCK=1` check in tests.
 
 ## Dev Notes
 
@@ -157,15 +157,27 @@ CodeMask/
 {{agent_model_name_version}}
 
 ### Debug Log References
-- Check `vmmap` output if running locally to verify wiring.
+- Confirmed `SecureBuffer` implements `posix_memalign` and `mlock`.
+- Validated `SessionActor` isolation using `SessionActorTests`.
+- Added integration tests in `AppStoreTests`.
+- Noted persistent failure in `AppDelegateTests` (unrelated to this story).
 
 ### Completion Notes List
-- Confirmed `mlock` implementation logic.
-- Verified Namespace structure matches Project Context.
+- Implemented `SecureBuffer` with memory locking and secure wipe.
+- Created `Session` namespace and `SessionActor` for thread-safe storage.
+- Integrated `SessionStorageProtocol` into `AppEnvironment` and `AppStore`.
+- Added comprehensive unit tests for `SecureBuffer`, `SessionActor`, and `TokenGenerator`.
+- Verified integration with `AppStore` via tests.
 
 ### File List
-- `CodeMask/Core/Security/SecureBuffer.swift`
-- `CodeMask/Features/Session/Session.swift`
-- `CodeMask/Features/Session/SessionActor.swift`
-- `CodeMask/Features/Session/TokenGenerator.swift`
-- `CodeMaskTests/Features/Session/SessionTests.swift`
+- `CodeMask/CodeMask/Core/Security/SecureBuffer.swift`
+- `CodeMask/CodeMask/Features/Session/Session.swift`
+- `CodeMask/CodeMask/Features/Session/SessionActor.swift`
+- `CodeMask/CodeMask/Features/Session/TokenGenerator.swift`
+- `CodeMask/CodeMaskTests/Core/Security/SecureBufferTests.swift`
+- `CodeMask/CodeMaskTests/Features/Session/SessionTests.swift`
+- `CodeMask/CodeMaskTests/Features/Session/SessionActorTests.swift`
+- `CodeMask/CodeMaskTests/Features/Session/TokenGeneratorTests.swift`
+- `CodeMask/CodeMask/App/AppEnvironment.swift`
+- `CodeMask/CodeMask/App/AppStore.swift`
+- `CodeMask/CodeMaskTests/App/AppStoreTests.swift`

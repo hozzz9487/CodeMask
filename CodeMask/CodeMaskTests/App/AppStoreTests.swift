@@ -47,4 +47,13 @@ final class AppStoreTests: XCTestCase {
         store.send(.security(.didEncounterError(.unknown)))
         XCTAssertEqual(store.security.lastError, .unknown)
     }
+    
+    func testSessionUpdates() {
+        let store = AppStore(environment: AppEnvironment())
+        let uuid = UUID()
+        
+        store.send(.session(.didSecureData(token: uuid)))
+        
+        XCTAssertEqual(store.session.sessionID, uuid)
+    }
 }
