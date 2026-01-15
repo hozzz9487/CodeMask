@@ -56,19 +56,25 @@ final class SecureBuffer {
         
         // 3. Lock the memory pages to prevent swapping (CRITICAL)
         if mlock(self.pointer, self.allocationSize) != 0 {
-            // In a security context, failure to lock is a vulnerability.
-            // We log a high-visibility warning.
-            print("SecureBuffer [CRITICAL]: mlock failed with error \(errno). Sensitive data may swap to disk.")
+            let err = errno
+            let isStrict = getenv("REQUIRE_MLOCK") != nil
+            
+            if isStrict {
+                fatalError("SecureBuffer [CRITICAL]: mlock failed with error \(err) and REQUIRE_MLOCK is set. Aborting.")
+            } else {
+                // In a security context, failure to lock is a vulnerability.
+                // We log a high-visibility warning.
+                print("SecureBuffer [CRITICAL]: mlock failed with error \(err). Sensitive data may swap to disk.")
+            }
         }
     }
     
     deinit {
-        // 1. Secure wipe (memset)
-        // We zero the entire allocation before freeing.
-        // Note: The compiler might optimize this away if it sees 'free' immediately after.
-        // However, Swift's optimization of C calls across FFI boundary usually respects side effects.
-        // Ideally we would use memset_s.
-        memset(pointer, 0, allocationSize)
+        // 1. Secure wipe (memset_s)
+        // memset_s is available in Darwin via string.h, ensuring no DSE.
+        // Parameters: ptr, dest_size, value, count
+        // Note: memset_s returns errno_t, strictly we should check it, but for deinit just running it is key.
+        _ = memset_s(pointer, allocationSize, 0, allocationSize)
         
         // 2. Unlock the pages
         munlock(pointer, allocationSize)

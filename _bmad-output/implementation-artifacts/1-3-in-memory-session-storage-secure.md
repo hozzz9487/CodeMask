@@ -1,6 +1,6 @@
 # Story 1.3: In-Memory Session Storage (Secure)
 
-Status: review
+Status: done
 
 <!-- Note: Validation COMPLETED. Improvements applied for Critical Security Safety. -->
 
@@ -63,6 +63,9 @@ So that no trace of my secrets is ever written to persistent storage.
     - [x] Unit Test `SecureBuffer` (verify lifecycle).
     - [x] Unit Test `SessionActor` (store/retrieve logic).
     - [x] **Critical**: Add `REQUIRE_MLOCK=1` check in tests.
+- [x] **Review Follow-ups (AI)**
+    - [x] **Fix Dead Store Elimination** (Critical) - Replace `memset` with `memset_s` in `SecureBuffer.swift`.
+    - [x] **Fix Fake Security Test** (Critical) - Update `SecureBuffer.init` to `fatalError` if `REQUIRE_MLOCK` is set and `mlock` fails.
 
 ## Dev Notes
 
