@@ -16,7 +16,7 @@ final class AppStore {
     static let shared = AppStore(environment: AppEnvironment())
     
     // Dependencies
-    let environment: AppEnvironment
+    var environment: AppEnvironment
     
     // Feature States
     var security = Security.State()

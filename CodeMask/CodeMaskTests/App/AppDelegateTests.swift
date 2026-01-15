@@ -12,11 +12,15 @@ final class AppDelegateTests: XCTestCase {
         super.setUp()
         appDelegate = AppDelegate()
         mockPermissionsManager = MockPermissionsManager()
+        // Inject mock into AppStore
+        AppStore.shared.environment.permissionsManager = mockPermissionsManager
     }
     
     override func tearDown() {
         appDelegate = nil
         mockPermissionsManager = nil
+        // Reset environment to default
+        AppStore.shared.environment = AppEnvironment()
         super.tearDown()
     }
     
@@ -78,6 +82,9 @@ final class AppDelegateTests: XCTestCase {
     
     /// Test that error observer can receive multiple errors (not one-shot)
     func testErrorObserver_CanReceiveMultipleErrors() {
+        let expectation1 = expectation(description: "First error received")
+        let expectation2 = expectation(description: "Second error received")
+        
         var errorCount = 0
         var lastError: AppError?
         
@@ -87,11 +94,17 @@ final class AppDelegateTests: XCTestCase {
                 if error != nil {
                     errorCount += 1
                     lastError = error
+                    if errorCount == 1 {
+                        expectation1.fulfill()
+                    } else if errorCount == 2 {
+                        expectation2.fulfill()
+                    }
                 }
             }
         
         // First error
         AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
+        wait(for: [expectation1], timeout: 1.0)
         XCTAssertEqual(errorCount, 1, "Should receive first error")
         
         // Clear error
@@ -99,6 +112,8 @@ final class AppDelegateTests: XCTestCase {
         
         // Second error should still be received (not a one-shot observer)
         AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
+        wait(for: [expectation2], timeout: 1.0)
+        
         XCTAssertEqual(errorCount, 2, "Should receive second error after clearing first")
         XCTAssertEqual(lastError, .permissionsCheckFailed, "Last error should be permissions check failed")
         cancellable.cancel()
@@ -127,15 +142,17 @@ final class AppDelegateTests: XCTestCase {
     func testPermissionCheckFlow_UpdatesStoreAndNotifiesObservers() {
         let updateExpectation = self.expectation(description: "Icon should update after permission check")
         
+        // Setup initial state via ACTION to ensure previousPermissionState is updated
+        // We set it to true/true so that the subsequent check (false/false) triggers a change
+        AppStore.shared.send(.security(.permissions(.didCheckStatus(accessibility: true, inputMonitoring: true))))
+        
         // Subscribe to isSafePublisher to detect when permissions are evaluated
         let cancellable = AppStore.shared.isSafePublisher
-            .receive(on: DispatchQueue.main)
-            .dropFirst() // Skip initial value
             .sink { _ in
                 updateExpectation.fulfill()
             }
         
-        // Trigger permission check
+        // Trigger permission check (Mock returns false, so state changes true -> false)
         appDelegate.checkPermissions()
         
         waitForExpectations(timeout: 1.0) { error in
@@ -145,8 +162,8 @@ final class AppDelegateTests: XCTestCase {
         }
         
         // Verify store state was updated
-        XCTAssertTrue(AppStore.shared.security.permissions.isAccessibilityGranted || !AppStore.shared.security.permissions.isAccessibilityGranted,
-                      "Store permissions should be updated after check")
+        XCTAssertFalse(AppStore.shared.security.permissions.isAccessibilityGranted,
+                      "Store permissions should be updated to false after check")
         cancellable.cancel()
     }
 }
