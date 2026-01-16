@@ -1,0 +1,126 @@
+# Story 1.4: Basic Masking Engine (Regex)
+
+Status: ready-for-dev
+
+<!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
+
+## Story
+
+As a user,
+I want the system to automatically detect and replace sensitive patterns in my clipboard,
+So that I don't accidentally share secrets with AI models.
+
+## Acceptance Criteria
+
+1.  **Native Regex Engine**: System uses Swift 5.7+ native `Regex` engine for high performance.
+2.  **Cached Compilation**: Regex patterns are pre-compiled or cached; NO compilation during the masking loop.
+3.  **Pattern Detection**: Identifies sensitive patterns (e.g., API Keys, Emails, IPs) based on active rules.
+4.  **Token Replacement**: Replaces matched sensitive data with high-entropy, collision-resistant tokens.
+    *   Format: `{{CM_T:<SHORT_ID>}}` (optimized for length).
+5.  **Deterministic Masking**:
+    *   **Longest Match First**: Prioritizes specific matches (e.g., full URL) over partial ones (e.g., domain).
+    *   **Left-Most First**: Breaks ties for equal-length overlapping matches by position.
+6.  **Performance**: Masking operation completes in <100ms for standard payloads (up to 50KB).
+7.  **Extraction**: Returns `MatchResult` containing the masked string and a secure map of `Token -> Secret`.
+
+## Tasks / Subtasks
+
+- [ ] **Core Regex Infrastructure (Namespaced)**
+    - [ ] Create `CodeMask/Features/Clipboard/RegexEngine.swift`.
+    - [ ] Define `extension Clipboard` to hold the engine and models.
+    - [ ] Define `struct Token: Hashable, Sendable`: Wraps a UUID or ID.
+    - [ ] Define `struct MatchResult: Sendable`: `maskedString: String`, `secrets: [Token: String]`.
+    - [ ] Implement `actor RegexEngine`.
+        - [ ] Properties: `private var cachedRegexes: [Rule.ID: Regex<AnyRegexOutput>]`.
+        - [ ] Func `updateRules(_ rules: [Rule])` to pre-compile patterns.
+        - [ ] Func `mask(_ content: String) async -> MatchResult`.
+- [ ] **Rule Definition**
+    - [ ] Define `struct Rule: Identifiable, Sendable`: `id`, `pattern: String`, `isEnabled`.
+    - [ ] Create default ruleset (Email, URL, IP, Generic "Key" patterns).
+- [ ] **Masking Logic Implementation**
+    - [ ] Implement the **Deterministic Masking Algorithm** (see Tech Requirements).
+    - [ ] Generate compact tokens `{{CM_T:<BASE64_ID>}}`.
+- [ ] **Testing**
+    - [ ] Unit Test `RegexEngine` with simple patterns.
+    - [ ] **Critical**: Unit Test overlap logic:
+        - Case A (Subset): "https://a.com" vs "a.com" -> Winner: "https://a.com"
+        - Case B (Equal Overlap): "ABC" (Rules "AB", "BC") -> Winner: "AB" (Left-most)
+    - [ ] Performance Test: Verify pre-compilation benefit and <100ms execution.
+
+## Dev Notes
+
+### Developer Context
+
+The `RegexEngine` is a stateless *processor* living within the `Clipboard` namespace. It consumes text and configuration, and produces masked results. It must be robust against malicious regex (ReDoS) by relying on Swift's modern engine and simple patterns.
+
+### Technical Requirements
+
+1.  **Strict Namespacing**: All types must be nested: `Clipboard.RegexEngine`, `Clipboard.Rule`, `Clipboard.MatchResult`, `Clipboard.Token`.
+2.  **Performance Strategy (Critical)**:
+    *   Do NOT run `try Regex(pattern)` inside the `mask()` loop.
+    *   Maintain a `cachedRegexes` dictionary in the actor.
+    *   Update cache only when rules change.
+3.  **Deterministic Masking Algorithm**:
+    1.  **Find All**: Run *every* active regex against the full string. Collect all `(Range, RuleID)`.
+    2.  **Sort**:
+        *   Primary: Length (Descending) - Longest wins.
+        *   Secondary: Lower Bound (Ascending) - Left-most wins.
+    3.  **Filter**: Iterate through sorted matches. Keep a match ONLY if it does not overlap with any already-accepted match.
+    4.  **Replace**: Apply accepted matches to the string.
+4.  **Token Format**: Use `{{CM_T:<ShortHash>}}` (e.g., first 8 chars of UUID or Base64) to minimize layout disruption in target apps while maintaining uniqueness.
+
+### Architecture Compliance
+
+*   **Namespace**: `CodeMask/Features/Clipboard/`
+*   **Encapsulation**: `extension Clipboard { ... }`
+*   **Concurrency**: `actor` for thread safety and exclusive access to the regex cache.
+
+### File Structure Requirements
+
+```
+CodeMask/
+├── Features/
+│   └── Clipboard/
+│       ├── RegexEngine.swift      <-- namespace Clipboard { actor RegexEngine ... }
+│       └── Models/
+│           ├── Rule.swift         <-- namespace Clipboard { struct Rule ... }
+│           └── MatchResult.swift  <-- namespace Clipboard { struct MatchResult ... }
+└── CodeMaskTests/
+    └── Features/
+        └── Clipboard/
+            └── RegexEngineTests.swift
+```
+
+### Testing Requirements
+
+1.  **Overlap Scenarios**:
+    *   "Full URL" vs "Domain" (Longest wins).
+    *   "StartOverlap" vs "EndOverlap" (Left-most wins).
+2.  **Re-entrancy**: Ensure `updateRules` doesn't crash a concurrent `mask` call (Actor handles this, but good to verify logic).
+3.  **Performance**: `XCTMeasure` on the `mask` function with 50 rules and 50KB text.
+
+### Previous Story Intelligence
+
+*   **From Story 1.3**: `RegexEngine` outputs data for `SessionActor`. Ensure `MatchResult` is fully `Sendable` to cross this boundary.
+
+### Latest Tech Information (Swift 6.2)
+
+*   **RegexBuilder**: Use `Regex { ... }` for internal static rules if needed.
+*   **AnyRegexOutput**: For dynamic rules from string patterns, the type is `Regex<AnyRegexOutput>`.
+
+### Project Context Reference
+
+*   **Rule**: "Feature Namespacing: MUST wrap all Feature State and Actions..." -> Checked.
+*   **Rule**: "AppError payloads... sensitive content" -> Ensure regex errors don't log the pattern itself if it contains user data (unlikely here, but good practice).
+
+## Dev Agent Record
+
+### Agent Model Used
+
+{{agent_model_name_version}}
+
+### Debug Log References
+
+### Completion Notes List
+
+### File List
