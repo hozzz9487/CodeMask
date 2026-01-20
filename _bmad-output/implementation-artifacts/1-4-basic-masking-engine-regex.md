@@ -1,6 +1,6 @@
 # Story 1.4: Basic Masking Engine (Regex)
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -46,6 +46,11 @@ So that I don't accidentally share secrets with AI models.
         - Case A (Subset): "https://a.com" vs "a.com" -> Winner: "https://a.com"
         - Case B (Equal Overlap): "ABC" (Rules "AB", "BC") -> Winner: "AB" (Left-most)
     - [x] Performance Test: Verify pre-compilation benefit and <100ms execution.
+- [ ] **Review Follow-ups (AI)**
+    - [ ] [AI-Review][High] `RegexEngine.updateRules` silently drops invalid rules. Should return error status or valid/invalid lists. [RegexEngine.swift:8]
+    - [ ] [AI-Review][Medium] `testPerformance` assertion (0.5s) is 5x looser than AC (0.1s). Tighten test limit. [RegexEngineTests.swift:80]
+    - [ ] [AI-Review][Low] Replace `print()` with `Logger` in `RegexEngine`. [RegexEngine.swift:10]
+    - [ ] [AI-Review][Low] Consider capture group support for finer masking (e.g., maintain 'key=' prefix). [RegexEngine.swift:30]
 
 ## Dev Notes
 
