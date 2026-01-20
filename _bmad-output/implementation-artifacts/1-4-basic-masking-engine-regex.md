@@ -1,6 +1,6 @@
 # Story 1.4: Basic Masking Engine (Regex)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -25,27 +25,27 @@ So that I don't accidentally share secrets with AI models.
 
 ## Tasks / Subtasks
 
-- [ ] **Core Regex Infrastructure (Namespaced)**
-    - [ ] Create `CodeMask/Features/Clipboard/RegexEngine.swift`.
-    - [ ] Define `extension Clipboard` to hold the engine and models.
-    - [ ] Define `struct Token: Hashable, Sendable`: Wraps a UUID or ID.
-    - [ ] Define `struct MatchResult: Sendable`: `maskedString: String`, `secrets: [Token: String]`.
-    - [ ] Implement `actor RegexEngine`.
-        - [ ] Properties: `private var cachedRegexes: [Rule.ID: Regex<AnyRegexOutput>]`.
-        - [ ] Func `updateRules(_ rules: [Rule])` to pre-compile patterns.
-        - [ ] Func `mask(_ content: String) async -> MatchResult`.
-- [ ] **Rule Definition**
-    - [ ] Define `struct Rule: Identifiable, Sendable`: `id`, `pattern: String`, `isEnabled`.
-    - [ ] Create default ruleset (Email, URL, IP, Generic "Key" patterns).
-- [ ] **Masking Logic Implementation**
-    - [ ] Implement the **Deterministic Masking Algorithm** (see Tech Requirements).
-    - [ ] Generate compact tokens `{{CM_T:<BASE64_ID>}}`.
-- [ ] **Testing**
-    - [ ] Unit Test `RegexEngine` with simple patterns.
-    - [ ] **Critical**: Unit Test overlap logic:
+- [x] **Core Regex Infrastructure (Namespaced)**
+    - [x] Create `CodeMask/Features/Clipboard/RegexEngine.swift`.
+    - [x] Define `extension Clipboard` to hold the engine and models.
+    - [x] Define `struct Token: Hashable, Sendable`: Wraps a UUID or ID.
+    - [x] Define `struct MatchResult: Sendable`: `maskedString: String`, `secrets: [Token: String]`.
+    - [x] Implement `actor RegexEngine`.
+        - [x] Properties: `private var cachedRegexes: [Rule.ID: Regex<AnyRegexOutput>]`.
+        - [x] Func `updateRules(_ rules: [Rule])` to pre-compile patterns.
+        - [x] Func `mask(_ content: String) async -> MatchResult`.
+- [x] **Rule Definition**
+    - [x] Define `struct Rule: Identifiable, Sendable`: `id`, `pattern: String`, `isEnabled`.
+    - [x] Create default ruleset (Email, URL, IP, Generic "Key" patterns).
+- [x] **Masking Logic Implementation**
+    - [x] Implement the **Deterministic Masking Algorithm** (see Tech Requirements).
+    - [x] Generate compact tokens `{{CM_T:<BASE64_ID>}}`.
+- [x] **Testing**
+    - [x] Unit Test `RegexEngine` with simple patterns.
+    - [x] **Critical**: Unit Test overlap logic:
         - Case A (Subset): "https://a.com" vs "a.com" -> Winner: "https://a.com"
         - Case B (Equal Overlap): "ABC" (Rules "AB", "BC") -> Winner: "AB" (Left-most)
-    - [ ] Performance Test: Verify pre-compilation benefit and <100ms execution.
+    - [x] Performance Test: Verify pre-compilation benefit and <100ms execution.
 
 ## Dev Notes
 
@@ -122,5 +122,16 @@ CodeMask/
 ### Debug Log References
 
 ### Completion Notes List
+- Implemented `RegexEngine` actor with `updateRules` and `mask` methods.
+- Implemented `Rule`, `Token`, and `MatchResult` models within `Clipboard` namespace.
+- Implemented deterministic masking algorithm prioritizing longest and then left-most matches.
+- Added default ruleset including regexes for Email, URL, IPv4, and Generic Keys.
+- Added comprehensive unit tests covering basic masking, overlap scenarios, and performance.
+- Verified all acceptance criteria are met.
 
 ### File List
+- CodeMask/CodeMask/Features/Clipboard/Clipboard.swift
+- CodeMask/CodeMask/Features/Clipboard/Models/Rule.swift
+- CodeMask/CodeMask/Features/Clipboard/Models/MatchResult.swift
+- CodeMask/CodeMask/Features/Clipboard/RegexEngine.swift
+- CodeMask/CodeMaskTests/Features/Clipboard/RegexEngineTests.swift
