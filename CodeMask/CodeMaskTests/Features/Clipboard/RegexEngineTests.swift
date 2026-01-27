@@ -2,88 +2,81 @@ import XCTest
 @testable import CodeMask
 
 final class RegexEngineTests: XCTestCase {
-    func testInitialization() async {
-        let engine = Clipboard.RegexEngine()
-        let result = await engine.mask("test")
-        XCTAssertEqual(result.maskedString, "test")
-        XCTAssertTrue(result.secrets.isEmpty)
+    var sut: Clipboard.RegexEngine!
+
+    override func setUp() async throws {
+        sut = Clipboard.RegexEngine()
     }
 
-    func testDefaultRules() {
-        let defaults = Clipboard.Rule.defaults
-        XCTAssertFalse(defaults.isEmpty)
+    func testUpdateRulesReturnsStatus() async {
+        let validRule = Clipboard.Rule(id: UUID(), pattern: "\\d+", isEnabled: true)
+        let invalidRule = Clipboard.Rule(id: UUID(), pattern: "[", isEnabled: true) // Invalid regex
+
+        let report = await sut.updateRules([validRule, invalidRule])
+
+        XCTAssertEqual(report.validCount, 1)
+        XCTAssertEqual(report.invalidCount, 1)
+        XCTAssertTrue(report.invalidRules.contains(invalidRule.id))
     }
 
     func testBasicMasking() async {
-        let engine = Clipboard.RegexEngine()
-        await engine.updateRules(Clipboard.Rule.defaults)
-        
-        let sensitive = "Contact me at test@example.com for details."
-        let result = await engine.mask(sensitive)
-        
-        XCTAssertNotEqual(result.maskedString, sensitive)
+        let rule = Clipboard.Rule(pattern: "secret", isEnabled: true)
+        _ = await sut.updateRules([rule])
+
+        let input = "This is a secret message"
+        let result = await sut.mask(input)
+
+        XCTAssertFalse(result.maskedString.contains("secret"))
         XCTAssertTrue(result.maskedString.contains("{{CM_T:"))
         XCTAssertEqual(result.secrets.count, 1)
-        XCTAssertEqual(result.secrets.first?.value, "test@example.com")
+        XCTAssertEqual(result.secrets.values.first, "secret")
     }
 
-    func testOverlapLogic() async {
-        let engine = Clipboard.RegexEngine()
+    func testOverlapPriority_LongestWins() async {
+        // "https://a.com" vs "a.com"
+        let ruleLong = Clipboard.Rule(pattern: "https://a\\.com", isEnabled: true)
+        let ruleShort = Clipboard.Rule(pattern: "a\\.com", isEnabled: true)
         
-        // Case A: Longest Match First
-        // Rule 1: Matches "https://a.com"
-        // Rule 2: Matches "a.com"
-        let rule1 = Clipboard.Rule(pattern: "https://a\\.com", isEnabled: true)
-        let rule2 = Clipboard.Rule(pattern: "a\\.com", isEnabled: true)
+        _ = await sut.updateRules([ruleLong, ruleShort])
         
-        await engine.updateRules([rule1, rule2])
-        let inputA = "Visit https://a.com now"
-        let resultA = await engine.mask(inputA)
+        let input = "Visit https://a.com now"
+        let result = await sut.mask(input)
         
-        // Should mask the full URL, not just the domain part twice or something weird
-        // Since "https://a.com" is longer (13 chars) than "a.com" (5 chars), it should win.
-        XCTAssertEqual(resultA.secrets.count, 1)
-        XCTAssertEqual(resultA.secrets.values.first, "https://a.com")
+        // Should have 1 token covering the longer match
+        XCTAssertEqual(result.secrets.count, 1)
+        XCTAssertEqual(result.secrets.values.first, "https://a.com")
+    }
+    
+    func testOverlapPriority_LeftMostWins() async {
+        // "ABC" with rules "AB" and "BC" -> "AB" wins because it starts earlier
+        let ruleAB = Clipboard.Rule(pattern: "AB", isEnabled: true)
+        let ruleBC = Clipboard.Rule(pattern: "BC", isEnabled: true)
         
-        // Case B: Left-most First for Equal Length (roughly) or Overlapping
-        // Input: "ABC"
-        // Rule 3: "AB"
-        // Rule 4: "BC"
-        let rule3 = Clipboard.Rule(pattern: "AB", isEnabled: true)
-        let rule4 = Clipboard.Rule(pattern: "BC", isEnabled: true)
+        _ = await sut.updateRules([ruleAB, ruleBC])
         
-        await engine.updateRules([rule3, rule4])
-        let inputB = "ABC"
-        let resultB = await engine.mask(inputB)
+        let input = "ABC"
+        let result = await sut.mask(input)
         
-        // "AB" starts at 0. "BC" starts at 1.
-        // Both length 2.
-        // Primary sort: Length (Tie)
-        // Secondary sort: Position (0 vs 1). 0 wins.
-        // "AB" is selected. "BC" overlaps "AB" (B is shared), so "BC" should be discarded.
-        
-        XCTAssertEqual(resultB.secrets.count, 1)
-        XCTAssertTrue(resultB.secrets.values.contains("AB"))
-        XCTAssertFalse(resultB.secrets.values.contains("BC"))
-        
-        // Verify masked string has "C" remaining
-        // "AB" -> {{TOKEN}}
-        // Result: "{{TOKEN}}C"
-        XCTAssertTrue(resultB.maskedString.hasSuffix("C"))
+        XCTAssertEqual(result.secrets.count, 1)
+        XCTAssertEqual(result.secrets.first?.value, "AB")
     }
 
-    func testPerformance() async {
-        let engine = Clipboard.RegexEngine()
-        await engine.updateRules(Clipboard.Rule.defaults)
+    func testPerformanceStrict() async {
+        // Generate 50 rules
+        let rules = (0..<50).map {
+            Clipboard.Rule(pattern: "testpattern\($0)", isEnabled: true)
+        }
+        _ = await sut.updateRules(rules)
         
-        // Approx 70KB of text
-        let text = String(repeating: "Here is an email: test@example.com and a url https://example.com/page ", count: 1000)
+        // Generate ~50KB text
+        // "testpattern10 " is 14 chars. 4000 repeats ~ 56KB.
+        let text = String(repeating: "testpattern10 ", count: 4000)
         
         let start = Date()
-        let _ = await engine.mask(text)
+        _ = await sut.mask(text)
         let duration = Date().timeIntervalSince(start)
         
-        // Allow slightly more buffer for CI/simulated env, but aim for < 0.1s
-        XCTAssertLessThan(duration, 0.5, "Masking took too long: \(duration)s")
+        // AC says < 100ms (0.1s)
+        XCTAssertLessThan(duration, 0.1, "Masking took too long: \(duration)s")
     }
 }

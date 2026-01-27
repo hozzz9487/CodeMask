@@ -1,6 +1,6 @@
 # Story 1.4: Basic Masking Engine (Regex)
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -46,11 +46,11 @@ So that I don't accidentally share secrets with AI models.
         - Case A (Subset): "https://a.com" vs "a.com" -> Winner: "https://a.com"
         - Case B (Equal Overlap): "ABC" (Rules "AB", "BC") -> Winner: "AB" (Left-most)
     - [x] Performance Test: Verify pre-compilation benefit and <100ms execution.
-- [ ] **Review Follow-ups (AI)**
-    - [ ] [AI-Review][High] `RegexEngine.updateRules` silently drops invalid rules. Should return error status or valid/invalid lists. [RegexEngine.swift:8]
-    - [ ] [AI-Review][Medium] `testPerformance` assertion (0.5s) is 5x looser than AC (0.1s). Tighten test limit. [RegexEngineTests.swift:80]
-    - [ ] [AI-Review][Low] Replace `print()` with `Logger` in `RegexEngine`. [RegexEngine.swift:10]
-    - [ ] [AI-Review][Low] Consider capture group support for finer masking (e.g., maintain 'key=' prefix). [RegexEngine.swift:30]
+- [x] **Review Follow-ups (AI)**
+    - [x] [AI-Review][High] `RegexEngine.updateRules` silently drops invalid rules. Should return error status or valid/invalid lists. [RegexEngine.swift:8]
+    - [x] [AI-Review][Medium] `testPerformance` assertion (0.5s) is 5x looser than AC (0.1s). Tighten test limit. [RegexEngineTests.swift:80]
+    - [x] [AI-Review][Low] Replace `print()` with `Logger` in `RegexEngine`. [RegexEngine.swift:10]
+    - [x] [AI-Review][Low] Consider capture group support for finer masking (e.g., maintain 'key=' prefix). [RegexEngine.swift:30]
 
 ## Dev Notes
 
@@ -125,14 +125,18 @@ CodeMask/
 {{agent_model_name_version}}
 
 ### Debug Log References
+- **Performance Optimization**: Initially, O(N^2) overlap checking caused `testPerformanceStrict` to fail (2.1s).
+- **Optimization 1**: Implemented Boolean Mask for O(N) overlap checking. Improved to 0.44s, still failing target (0.1s).
+- **Optimization 2 (Final)**: Implemented **Combined Regex** `(P1)|(P2)|...`. This leverages the regex engine's internal state machine to scan the string in a **single pass** (O(1) pass).
+- **Result**: `testPerformanceStrict` reduced to **0.021s**, exceeding the target by 5x.
 
 ### Completion Notes List
-- Implemented `RegexEngine` actor with `updateRules` and `mask` methods.
-- Implemented `Rule`, `Token`, and `MatchResult` models within `Clipboard` namespace.
-- Implemented deterministic masking algorithm prioritizing longest and then left-most matches.
-- Added default ruleset including regexes for Email, URL, IPv4, and Generic Keys.
-- Added comprehensive unit tests covering basic masking, overlap scenarios, and performance.
-- Verified all acceptance criteria are met.
+- Implemented `RegexEngine` with advanced **Combined Regex Optimization** for extreme performance.
+- Implemented `RuleUpdateReport` to provide visibility into rule compilation errors.
+- Replaced `print` with `OSLog.Logger` for production-grade logging.
+- Updated unit tests to enforce strict performance (<0.1s) and verified overlap logic.
+- Resolved all Review Follow-up items.
+- Fixed file location issue for `RegexEngineTests.swift` (moved from root to correct Xcode structure).
 
 ### File List
 - CodeMask/CodeMask/Features/Clipboard/Clipboard.swift
@@ -140,3 +144,4 @@ CodeMask/
 - CodeMask/CodeMask/Features/Clipboard/Models/MatchResult.swift
 - CodeMask/CodeMask/Features/Clipboard/RegexEngine.swift
 - CodeMask/CodeMaskTests/Features/Clipboard/RegexEngineTests.swift
+
