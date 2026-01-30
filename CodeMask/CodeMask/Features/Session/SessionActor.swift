@@ -5,6 +5,7 @@ import Foundation
 /// Protocol defining session storage capabilities.
 protocol SessionStorageProtocol: Actor {
     func store(content: String) -> UUID
+    func store(batch: [String: String])
     func retrieve(id: UUID) -> String?
     func clear()
 }
@@ -16,7 +17,7 @@ protocol SessionStorageProtocol: Actor {
 actor SessionActor: SessionStorageProtocol {
     
     // Internal storage mapping tokens to secure buffers
-    private var storage: [UUID: SecureBuffer] = [:]
+    private var storage: [String: SecureBuffer] = [:]
     
     private let tokenGenerator = TokenGenerator()
     
@@ -31,19 +32,28 @@ actor SessionActor: SessionStorageProtocol {
         let buffer = SecureBuffer(string: content)
         
         // Store in dictionary
-        storage[id] = buffer
+        storage[id.uuidString] = buffer
         
         return id
+    }
+    
+    /// Batch stores content with provided IDs (String keys).
+    func store(batch: [String: String]) {
+        for (id, content) in batch {
+            storage[id] = SecureBuffer(string: content)
+        }
     }
     
     /// Retrieves content for a given token.
     /// - Parameter id: The UUID token.
     /// - Returns: The original string if found, otherwise nil.
     func retrieve(id: UUID) -> String? {
-        // Check-After-Await is not strictly needed here as there are no suspension points,
-        // but if we added async logic, we would need to verify state.
-        
-        guard let buffer = storage[id] else {
+        return retrieve(idString: id.uuidString)
+    }
+    
+    /// Retrieves content for a given string ID.
+    func retrieve(idString: String) -> String? {
+        guard let buffer = storage[idString] else {
             return nil
         }
         

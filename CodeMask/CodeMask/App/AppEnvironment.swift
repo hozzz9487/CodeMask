@@ -15,15 +15,28 @@ struct AppEnvironment {
     var hotkeyManager: HotkeyServiceProtocol
     var session: SessionStorageProtocol
     
+    var pasteboard: PasteboardServiceProtocol
+    var haptics: HapticServiceProtocol
+    var audio: AudioServiceProtocol
+    var regexEngine: Clipboard.RegexEngineProtocol
+    
     // var clipboardMonitor: ClipboardMonitorProtocol
     
     init(
         permissionsManager: PermissionsManagerProtocol = PermissionsManager(),
         hotkeyManager: HotkeyServiceProtocol = GlobalHotkeyManager(),
-        session: SessionStorageProtocol = SessionActor()
+        session: SessionStorageProtocol = SessionActor(),
+        pasteboard: PasteboardServiceProtocol = LivePasteboardService(),
+        haptics: HapticServiceProtocol = LiveHapticService(),
+        audio: AudioServiceProtocol = LiveAudioService(),
+        regexEngine: Clipboard.RegexEngineProtocol = Clipboard.RegexEngine()
     ) {
         self.permissionsManager = permissionsManager
         self.hotkeyManager = hotkeyManager
         self.session = session
+        self.pasteboard = pasteboard
+        self.haptics = haptics
+        self.audio = audio
+        self.regexEngine = regexEngine
     }
 }

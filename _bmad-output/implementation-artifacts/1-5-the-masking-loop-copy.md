@@ -1,6 +1,6 @@
 # Story 1.5: The Masking Loop (Copy)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation COMPLETED. Critical Concurrency & Security Improvements Applied. -->
 
@@ -62,19 +62,19 @@ So that my development flow is not interrupted while my secrets are secured in R
 
 ## Tasks
 
-- [ ] **Protocol Definition**
-    - [ ] Define `PasteboardServiceProtocol`, `HapticServiceProtocol`, `AudioServiceProtocol`.
-    - [ ] Implement `Live` variants wrapping `NSPasteboard`, `NSHapticFeedbackManager`, `NSSound`.
-- [ ] **Reducer Logic (The Brain)**
-    - [ ] Handle `.didTriggerMaskingShortcut`:
-        - [ ] Cancel previous masking task.
-        - [ ] Start new detached task.
-        - [ ] Execute Logic Steps (Read -> Mask -> Store -> Write).
-        - [ ] Dispatch result.
-- [ ] **Feedback Handling**
-    - [ ] Handle `.maskingSequenceCompleted`: Trigger HUD/Audio/Haptics.
-- [ ] **Tests**
-    - [ ] `MaskingLoopTests.swift`: Cover Success, No-Match, Failure, and Race Conditions.
+- [x] **Protocol Definition**
+    - [x] Define `PasteboardServiceProtocol`, `HapticServiceProtocol`, `AudioServiceProtocol`.
+    - [x] Implement `Live` variants wrapping `NSPasteboard`, `NSHapticFeedbackManager`, `NSSound`.
+- [x] **Reducer Logic (The Brain)**
+    - [x] Handle `.didTriggerMaskingShortcut`:
+        - [x] Cancel previous masking task.
+        - [x] Start new detached task.
+        - [x] Execute Logic Steps (Read -> Mask -> Store -> Write).
+        - [x] Dispatch result.
+- [x] **Feedback Handling**
+    - [x] Handle `.maskingSequenceCompleted`: Trigger HUD/Audio/Haptics.
+- [x] **Tests**
+    - [x] `MaskingLoopTests.swift`: Cover Success, No-Match, Failure, and Race Conditions.
 
 ## Dev Notes
 
@@ -100,9 +100,36 @@ So that my development flow is not interrupted while my secrets are secured in R
 ### Agent Model Used
 
 {{agent_model_name_version}}
+- Implementation Agent (Gemini)
+
+### Implementation Notes
+
+- **Concurrency**: Implemented "Conflated Task Pattern" in `AppStore.reduce(clipboard:)` using `Task.detached` and `maskingTask?.cancel()`. Verified with `MaskingLoopTests.testMaskingLoop_RaceCondition`.
+- **Services**: Created `PasteboardService`, `HapticService`, `AudioService` in `Core/Services`. Added `HUD` feature state.
+- **Session Support**: Updated `SessionActor` to support `store(batch:)` with `String` keys to handle `Token` mapping.
+- **Testing**: Created `MockServices` and `MaskingLoopTests`. Verified 100% pass.
+- **Security**: Used `OSAllocatedUnfairLock` for `AudioService` cache thread safety.
 
 ### Debug Log References
 
 ### Completion Notes List
 
 ### File List
+
+- CodeMask/CodeMask/Core/Services/PasteboardService.swift
+- CodeMask/CodeMask/Core/Services/HapticService.swift
+- CodeMask/CodeMask/Core/Services/AudioService.swift
+- CodeMask/CodeMask/Core/Services/ProtocolConformanceTests.swift (Moved to Tests)
+- CodeMask/CodeMask/Features/Clipboard/RegexEngine.swift
+- CodeMask/CodeMask/Features/Clipboard/Clipboard.swift
+- CodeMask/CodeMask/Features/HUD/HUD.swift
+- CodeMask/CodeMask/Features/Session/SessionActor.swift
+- CodeMask/CodeMask/App/AppEnvironment.swift
+- CodeMask/CodeMask/App/AppStore.swift
+- CodeMaskTests/Core/Services/ProtocolConformanceTests.swift
+- CodeMaskTests/Mocks/MockServices.swift
+- CodeMaskTests/Features/Clipboard/MaskingLoopTests.swift
+
+## Change Log
+
+- 2026-01-30: Implemented Masking Loop logic, added services (Pasteboard, Haptic, Audio), updated SessionActor, added Tests. (Gemini)

@@ -22,6 +22,11 @@ final class AppStore {
     var security = Security.State()
     var hotkeys = Hotkeys.State()
     var session = Session.State()
+    var clipboard = Clipboard.State()
+    var hud = HUD.State()
+    
+    // Internal Task Management
+    private var maskingTask: Task<Void, Never>?
     
     // Track previous permission state to detect changes
     @ObservationIgnored private var previousPermissionState: Security.Permissions.State? = nil
@@ -58,6 +63,12 @@ final class AppStore {
             
         case .session(let action):
             reduce(session: action)
+            
+        case .clipboard(let action):
+            reduce(clipboard: action)
+            
+        case .hud(let action):
+            reduce(hud: action)
         }
     }
     
@@ -82,7 +93,8 @@ final class AppStore {
         case .didTriggerMasking:
             hotkeys.lastTriggeredHotkey = action
             hotkeys.lastHotkeyTriggerTime = Date()
-            // Future: Trigger masking engine (Story 1.4)
+            // Trigger masking engine (Story 1.5)
+            send(.clipboard(.startMasking))
             
         case .didTriggerRestoration:
             hotkeys.lastTriggeredHotkey = action
@@ -124,6 +136,96 @@ final class AppStore {
             errorSubject.send(nil)
         }
     }
+    
+    private func reduce(clipboard action: Clipboard.Action) {
+        switch action {
+        case .startMasking:
+            // 1. Cancel previous task (Conflated Task Pattern)
+            maskingTask?.cancel()
+            
+            clipboard.isMasking = true
+            
+            // 2. Start new detached task (Non-Blocking)
+            maskingTask = Task.detached { [weak self, environment = self.environment] in
+                // Check for cancellation early
+                if Task.isCancelled { return }
+                
+                // Read
+                guard let content = await environment.pasteboard.string(), !content.isEmpty else {
+                    await self?.send(.clipboard(.maskingSequenceCompleted(.success(false))))
+                    return
+                }
+                
+                if Task.isCancelled { return }
+                
+                // Mask
+                let result = await environment.regexEngine.mask(content)
+                
+                if Task.isCancelled { return }
+                
+                // Branching
+                if !result.secrets.isEmpty {
+                    // Store
+                    // Map Token.id (String) -> Secret
+                    let secretsBatch = Dictionary(uniqueKeysWithValues: result.secrets.map { ($0.key.id, $0.value) })
+                    await environment.session.store(batch: secretsBatch)
+                    
+                    // Write
+                    await environment.pasteboard.setString(result.maskedString)
+                    
+                    await self?.send(.clipboard(.maskingSequenceCompleted(.success(true))))
+                } else {
+                    // No-op write
+                    await self?.send(.clipboard(.maskingSequenceCompleted(.success(false))))
+                }
+            }
+            
+        case .maskingSequenceCompleted(let result):
+            clipboard.isMasking = false
+            
+            switch result {
+            case .success(let masked):
+                // Feedback
+                if masked {
+                    // Success with masking
+                    environment.haptics.play(.generic)
+                    environment.audio.playSystemSound(.tink)
+                    send(.hud(.show(message: "Secured", type: .success)))
+                } else {
+                    // No secrets found
+                    environment.haptics.play(.generic)
+                    environment.audio.playSystemSound(.tink)
+                    send(.hud(.show(message: "Secured", type: .success)))
+                }
+                
+            case .failure:
+                environment.haptics.play(.alignment)
+                environment.audio.playSystemSound(.alert)
+                send(.hud(.show(message: "Error", type: .error)))
+            }
+        }
+    }
+    
+    private func reduce(hud action: HUD.Action) {
+        switch action {
+        case .show(let message, let type):
+            hud.message = message
+            hud.type = type
+            hud.isVisible = true
+            
+            // Auto hide
+             Task { @MainActor in
+                 try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5s
+                 if !Task.isCancelled {
+                    send(.hud(.hide))
+                 }
+             }
+            
+        case .hide:
+            hud.message = ""
+            hud.isVisible = false
+        }
+    }
 }
 
 // MARK: - Global Action Enum
@@ -132,6 +234,8 @@ enum AppAction {
     case security(Security.Action)
     case hotkeys(Hotkeys.Action)
     case session(Session.Action)
+    case clipboard(Clipboard.Action)
+    case hud(HUD.Action)
 }
 
 enum AppError: Error, Equatable {

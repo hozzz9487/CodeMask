@@ -8,7 +8,12 @@ extension Clipboard {
         let invalidRules: [Rule.ID]
     }
 
-    actor RegexEngine {
+    protocol RegexEngineProtocol: Actor {
+        func updateRules(_ rules: [Rule]) -> RuleUpdateReport
+        func mask(_ content: String) async -> MatchResult
+    }
+
+    actor RegexEngine: RegexEngineProtocol {
         private var cachedRegexes: [Rule.ID: Regex<AnyRegexOutput>] = [:]
         private var combinedRegex: Regex<AnyRegexOutput>?
         private let logger = Logger(subsystem: "com.edsncfw.CodeMask", category: "RegexEngine")
