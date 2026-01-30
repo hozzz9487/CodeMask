@@ -28,8 +28,22 @@ final class RegexEngineTests: XCTestCase {
 
         XCTAssertFalse(result.maskedString.contains("secret"))
         XCTAssertTrue(result.maskedString.contains("{{CM_T:"))
+        // Token should be 12 chars (from prefix(12))
+        XCTAssertEqual(result.secrets.keys.first?.id.count, 12)
         XCTAssertEqual(result.secrets.count, 1)
         XCTAssertEqual(result.secrets.values.first, "secret")
+    }
+
+    func testLabelPreservation() async {
+        // Test the lookbehind rule
+        let rules = Clipboard.Rule.defaults
+        _ = await sut.updateRules(rules)
+        
+        let input = "My api_key: sk-1234567890abcdef12345"
+        let result = await sut.mask(input)
+        
+        XCTAssertTrue(result.maskedString.contains("api_key: {{CM_T:"), "Should preserve the label 'api_key: '")
+        XCTAssertFalse(result.maskedString.contains("sk-1234567890"), "Should mask the value")
     }
 
     func testOverlapPriority_LongestWins() async {

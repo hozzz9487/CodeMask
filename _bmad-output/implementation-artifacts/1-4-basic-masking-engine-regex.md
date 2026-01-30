@@ -1,6 +1,6 @@
 # Story 1.4: Basic Masking Engine (Regex)
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

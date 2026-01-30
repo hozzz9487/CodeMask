@@ -16,13 +16,13 @@ extension Clipboard {
         func updateRules(_ rules: [Rule]) -> RuleUpdateReport {
             var newCache: [Rule.ID: Regex<AnyRegexOutput>] = [:]
             var invalidIDs: [Rule.ID] = []
-            var validRulesForCombination: [String] = []
+            var patterns: [String] = []
             
             for rule in rules where rule.isEnabled {
                 do {
                     let regex = try Regex(rule.pattern)
                     newCache[rule.id] = regex
-                    validRulesForCombination.append(rule.pattern)
+                    patterns.append(rule.pattern)
                 } catch {
                     logger.error("Error compiling regex for rule \(rule.id): \(error.localizedDescription)")
                     invalidIDs.append(rule.id)
@@ -30,12 +30,12 @@ extension Clipboard {
             }
             self.cachedRegexes = newCache
             
-            // Optimization: Combine all rules into a single Regex for one-pass scanning.
-            // Sort by length descending to ensure "Longest Match First" in alternation.
-            let sortedPatterns = validRulesForCombination.sorted { $0.count > $1.count }
+            // Optimization: Combined all rules into a single Regex for one-pass scanning.
+            // Sorting by pattern string length descending helps the regex engine prioritize
+            // longer matches in alternations (A|B).
+            let sortedPatterns = patterns.sorted { $0.count > $1.count }
             
             if !sortedPatterns.isEmpty {
-                // Wrap each pattern in non-capturing group (?:...) to isolate alternations
                 let combinedPattern = sortedPatterns
                     .map { "(?:\($0))" }
                     .joined(separator: "|")
@@ -68,26 +68,47 @@ extension Clipboard {
             var secrets: [Token: String] = [:]
             var currentIndex = content.startIndex
             
-            // Regex matches are non-overlapping and left-most first by definition.
-            // Alternation order (Longest First) handles the priority.
+            resultString.reserveCapacity(content.count)
             
             for match in matches {
-                // Append text before match
-                if currentIndex < match.range.lowerBound {
-                    resultString.append(contentsOf: content[currentIndex..<match.range.lowerBound])
+                let fullRange = match.range
+                var maskRange = fullRange
+                
+                // Robust Label Preservation:
+                // Find all valid capture group ranges within this match.
+                // We pick the range that starts LATEST (furthest to the right)
+                // as the value to mask, assuming everything before it is the label.
+                var latestCaptureRange: Range<String.Index>? = nil
+                
+                // index 0 is full match, so we check 1 onwards
+                for i in 1..<match.output.count {
+                    if let captureRange = match[i].range {
+                        if latestCaptureRange == nil || captureRange.lowerBound > latestCaptureRange!.lowerBound {
+                            latestCaptureRange = captureRange
+                        }
+                    }
+                }
+                
+                if let target = latestCaptureRange {
+                    maskRange = target
+                }
+                
+                // Append text before maskRange (this includes any labels or surrounding text)
+                if currentIndex < maskRange.lowerBound {
+                    resultString.append(contentsOf: content[currentIndex..<maskRange.lowerBound])
                 }
                 
                 // Create Token
-                let matchText = String(content[match.range])
-                let uuid = UUID().uuidString
-                let shortID = String(uuid.prefix(8))
+                let matchText = String(content[maskRange])
+                let fullUUID = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                let shortID = String(fullUUID.prefix(12)).lowercased()
                 let tokenString = "{{CM_T:\(shortID)}}"
                 let token = Token(id: shortID)
                 
                 resultString.append(tokenString)
                 secrets[token] = matchText
                 
-                currentIndex = match.range.upperBound
+                currentIndex = maskRange.upperBound
             }
             
             // Append remaining text

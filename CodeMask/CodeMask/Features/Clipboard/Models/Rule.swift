@@ -34,9 +34,9 @@ extension Clipboard.Rule {
             ), // IPv4
             Clipboard.Rule(
                 id: UUID(),
-                pattern: "(?i)(api|secret|private|access)[_-]?key[\\s:=]+([A-Za-z0-9_\\-]{16,})",
+                pattern: "(?i)(api[_-]?key[\\s:=]{1,10})([A-Za-z0-9_\\-]{16,})|(?i)(secret[\\s:=]{1,10})([A-Za-z0-9_\\-]{16,})",
                 isEnabled: true
-            ) // Generic Key (Basic heuristic)
+            ) // Generic Key (Detects label + value)
         ]
     }
 }
