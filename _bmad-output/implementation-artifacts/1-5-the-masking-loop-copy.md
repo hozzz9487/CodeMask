@@ -2,101 +2,98 @@
 
 Status: ready-for-dev
 
-<!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
+<!-- Note: Validation COMPLETED. Critical Concurrency & Security Improvements Applied. -->
 
 ## Story
 
 As a user,
-I want the "Masking Copy" action to be seamless and fast,
-So that my development flow is not interrupted while my secrets are secured.
+I want the "Masking Copy" action to be seamless and fast (<100ms),
+So that my development flow is not interrupted while my secrets are secured in RAM.
 
-## Acceptance Criteria
+## Acceptance Criteria & Implementation Directives
 
-1.  **Event Trigger**: The loop is initiated by the Global Hotkey `Cmd+Opt+C` (implemented in Story 1.2).
-2.  **Latency Requirement**: The entire loop (Read -> Mask -> Store -> Write) completes in **< 100ms**.
-3.  **Data Flow**:
-    *   **Read**: Captures current text from System Pasteboard.
-    *   **Mask**: Processes text via `Clipboard.RegexEngine` (Story 1.4).
-    *   **Store**: Saves the *original* secret map to `Session.SessionActor` (Story 1.3).
-    *   **Write**: Writes the *masked* text back to System Pasteboard.
-4.  **Feedback**:
-    *   **Visual**: Triggers a HUD update (via State change) to show "Secured" (Blue).
-    *   **Audio**: Plays a subtle system sound ("Tink").
-    *   **Haptic**: Triggers a `generic` haptic tap on the trackpad.
-5.  **Error Handling**: If masking fails or clipboard is empty, user is notified via HUD (Red) and no change is made.
-6.  **Concurrency**: Operations must not block the Main Thread (UI), except for the minimal Pasteboard I/O if required.
+### 1. The Core Loop (Logic & Concurrency)
 
-## Tasks / Subtasks
+*   **Trigger**: Initiated by `.didTriggerMaskingShortcut` (from Story 1.2).
+*   **Concurrency Pattern (CRITICAL)**:
+    *   **Conflated Task**: To prevent race conditions during rapid triggers, the Reducer MUST use a cancellable task pattern (e.g., `.cancelInFlight` or storing a `Task` UUID). Only the *latest* trigger completes.
+    *   **Non-Blocking**: The entire logic chain (Read -> Mask -> Store -> Write) MUST run in a **detached Task** or background actor to avoid blocking the Main Thread/Reducer.
+*   **Logic Steps**:
+    1.  **Read**: `environment.pasteboard.string()`. Guard for empty.
+    2.  **Mask**: `await environment.regexEngine.mask(content)`.
+    3.  **Result Branching**:
+        *   **If Secrets Found**:
+            *   **Store**: `await environment.sessionActor.store(matchResult.secrets)`.
+            *   **Write**: `await environment.pasteboard.setString(matchResult.maskedString)`.
+            *   **Dispatch**: `.maskingSequenceCompleted(.success(masked: true))`.
+        *   **If No Secrets**:
+            *   **No-Op Write**: Do NOT write back to pasteboard (avoids churn).
+            *   **Dispatch**: `.maskingSequenceCompleted(.success(masked: false))`.
+    4.  **Security Hygiene**: Ensure the local `content` variable holding the original string is allowed to deallocate immediately after masking.
 
-- [ ] **Action Definition**
-    - [ ] Define `Clipboard.Action.didTriggerMaskingShortcut`: The entry point event.
-    - [ ] Define `Clipboard.Action.maskingSequenceCompleted(Result<Clipboard.MatchResult, AppError>)`: The completion event.
-- [ ] **Environment Integration**
-    - [ ] Extend `AppEnvironment` with `pasteboard: PasteboardServiceProtocol`.
-    - [ ] Extend `AppEnvironment` with `haptics: HapticServiceProtocol`.
-    - [ ] Extend `AppEnvironment` with `audio: AudioServiceProtocol`.
-    - [ ] Implement `LivePasteboardService`: Wraps `NSPasteboard.general`.
-    - [ ] Implement `LiveHapticService`: Wraps `NSHapticFeedbackManager`.
-    - [ ] Implement `LiveAudioService`: Wraps `NSSound`.
-- [ ] **The Masking Loop Logic (Reducer/Effect)**
-    - [ ] Implement the side-effect handler for `.didTriggerMaskingShortcut` in `AppReducer` (or Feature Reducer).
-    - [ ] **Step 1**: `await environment.pasteboard.string()`. Guard for empty.
-    - [ ] **Step 2**: `await environment.regexEngine.mask(content)`.
-    - [ ] **Step 3**: `await environment.sessionActor.store(matchResult.secrets)`.
-    - [ ] **Step 4**: `await environment.pasteboard.setString(matchResult.maskedString)`.
-    - [ ] **Step 5**: Dispatch `.maskingSequenceCompleted(.success)`.
-- [ ] **Feedback Integration**
-    - [ ] Handle `.maskingSequenceCompleted(.success)`:
-        - [ ] Trigger `environment.haptics.play(.generic)`.
-        - [ ] Trigger `environment.audio.playSystemSound(.tink)`.
-        - [ ] Update `AppState.hud` to show "Secured" (Blue).
-    - [ ] Handle `.maskingSequenceCompleted(.failure)`:
-        - [ ] Trigger `environment.haptics.play(.alignment)`.
-        - [ ] Update `AppState.hud` to show Error.
-- [ ] **Testing**
-    - [ ] Unit Test: Mock Pasteboard/Session/Regex and verify the flow dispatching correct actions.
-    - [ ] Performance Test: Measure the `Effect` execution time (aim for < 50ms logic time).
+### 2. Environment & Protocols
+
+*   **PasteboardServiceProtocol**:
+    *   `func string() async -> String?` (Must be MainActor-safe but non-blocking).
+    *   `func setString(_ content: String) async` (Must be MainActor-safe).
+*   **HapticServiceProtocol**:
+    *   `func prepare()` (Warmup engine).
+    *   `func play(_ feedback: HapticFeedbackType)` (Fire-and-forget).
+*   **AudioServiceProtocol**:
+    *   `func prepare(sound: SystemSound)` (Preload).
+    *   `func playSystemSound(_ sound: SystemSound)` (Fire-and-forget).
+
+### 3. Feedback System
+
+*   **Visual**:
+    *   `.success(masked: true)` -> HUD "Secured" (Blue).
+    *   `.success(masked: false)` -> HUD "No Secrets" (Grey/Green) or "Secured" (Blue) - *Decision: Use "Secured" (Blue) for both to indicate safety.*
+    *   `.failure` -> HUD "Error" (Red).
+*   **Audio/Haptic**:
+    *   Success: "Tink" sound + Generic Tap.
+    *   Failure: Warning Sound + Alignment Haptic.
+    *   **Optimization**: Call `environment.haptics.prepare()` and `environment.audio.prepare(.tink)` on app launch or `.onAppear`.
+
+### 4. Testing Requirements
+
+*   **Race Condition Test**: Simulate Trigger A, wait 10ms, Trigger B. Verify Trigger A is cancelled/ignored and only Trigger B writes to Pasteboard.
+*   **Zero-Residue verification**: (Manual/Review) Verify no `print()` logs of the content.
+*   **Mocking**: Inject Mocks for all services to verify the flow without touching the real NSPasteboard.
+
+## Tasks
+
+- [ ] **Protocol Definition**
+    - [ ] Define `PasteboardServiceProtocol`, `HapticServiceProtocol`, `AudioServiceProtocol`.
+    - [ ] Implement `Live` variants wrapping `NSPasteboard`, `NSHapticFeedbackManager`, `NSSound`.
+- [ ] **Reducer Logic (The Brain)**
+    - [ ] Handle `.didTriggerMaskingShortcut`:
+        - [ ] Cancel previous masking task.
+        - [ ] Start new detached task.
+        - [ ] Execute Logic Steps (Read -> Mask -> Store -> Write).
+        - [ ] Dispatch result.
+- [ ] **Feedback Handling**
+    - [ ] Handle `.maskingSequenceCompleted`: Trigger HUD/Audio/Haptics.
+- [ ] **Tests**
+    - [ ] `MaskingLoopTests.swift`: Cover Success, No-Match, Failure, and Race Conditions.
 
 ## Dev Notes
 
-### Developer Context
-
-This story connects the disparate components built in 1.2, 1.3, and 1.4 into the first usable feature. The critical challenge is **latency**. The user must feel like the copy happened instantly.
-
 ### Technical Requirements
 
-1.  **Async/Await Flow**: The side-effect should be a `run { send in ... }` block in the Reducer.
-2.  **Pasteboard Threading**: `NSPasteboard` is generally thread-safe but often best accessed from MainActor. If `LivePasteboardService` uses MainActor, ensure the switching cost is minimized.
-3.  **Error Handling**: If `RegexEngine` returns no matches (nothing masked), should we still "Store" and "Write"?
-    *   *Decision*: If `matchResult.secrets` is empty, do **not** write back to pasteboard (avoid unnecessary churn). Just trigger the "Secured" (or "Clean") feedback to let the user know the system checked it.
-    *   *Refinement*: If nothing to mask, maybe show "Safe" (Grey) instead of "Secured" (Blue)? *Decision*: Stick to simple "Secured" for now, or "No Secrets Found" if we want to be verbose. Let's stick to **"Secured"** (Blue) implies "Checked and Safe".
-4.  **Audio/Haptics**: Must be non-blocking. Fire and forget.
-
-### Architecture Compliance
-
-*   **Pattern**: Unidirectional Flow. View/Hotkey -> Action -> Reducer -> Effect -> Action -> State.
-*   **Protocols**: `PasteboardServiceProtocol`, `HapticServiceProtocol`, `AudioServiceProtocol` are REQUIRED for testing. Do not use `NSPasteboard.general` directly in the Reducer.
-*   **Namespacing**: Ensure all new Services are properly organized (e.g., `Core/Services/`).
-
-### Library/Framework Requirements
-
-*   `AppKit` (`NSPasteboard`, `NSHapticFeedbackManager`, `NSSound`).
-*   `Swift Concurrency`.
-
-### Testing Requirements
-
-*   **Mocking**: You MUST mock the `PasteboardService` to test the loop without clobbering the real system clipboard during tests.
-*   **State Assertion**: Verify that `AppState.hud` transitions correctly after the sequence.
+*   **Latency**: The user must feel "Instant". Use `Date` logging in debug to ensure `<100ms`.
+*   **State Management**: `AppState.hud` drives the UI. Do not manually present windows from the reducer.
+*   **Memory**: While `SecureBuffer` (Story 1.3) protects storage, this loop handles the `String` briefly. This is acceptable for the "Active" operation, provided it's not held in a long-lived property.
 
 ### Previous Story Intelligence
 
-*   **From 1.4**: `RegexEngine` is fast (< 21ms). We have plenty of budget for the rest of the loop.
-*   **From 1.3**: `SessionActor` uses `mlock`. Ensure the `store` call is awaited properly.
+*   **From 1.4**: `RegexEngine` returns `MatchResult` which contains the `secrets` map needed for `SessionActor.store`.
+*   **From 1.3**: `SessionActor.store` returns a `UUID` (Token), but for this loop, we just need to confirm storage success.
 
 ### Project Context Reference
 
-*   **Rule**: "Actions MUST describe Events". `.didTriggerMaskingShortcut` is perfect.
-*   **Rule**: "Inject all system services... via protocols".
+*   **Rule**: "Conflated Task Pattern... for monitoring/high-frequency tasks."
+*   **Rule**: "Actions MUST describe Events".
+
 
 ## Dev Agent Record
 
