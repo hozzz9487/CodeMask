@@ -1,6 +1,6 @@
 # Story 1.5: The Masking Loop (Copy)
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation COMPLETED. Critical Concurrency & Security Improvements Applied. -->
 
@@ -102,6 +102,8 @@ So that my development flow is not interrupted while my secrets are secured in R
 - [x] [AI-Review][MEDIUM] Missing Resource Preparation: Story AC 3 requires calling `prepare()` on haptics and audio services at launch. Currently missing in `AppStore.init` or `didLaunch`. [AppStore.swift:54]
 - [x] [AI-Review][MEDIUM] Task Reference Cleanup: `maskingTask` reference should be nil'd out in `.maskingSequenceCompleted` to avoid holding onto finished tasks. [AppStore.swift:183]
 - [x] [AI-Review][LOW] Documentation Consistency: The File List mentions `ProtocolConformanceTests.swift` in `Core/Services`, but it was moved to `CodeMaskTests`. Update story to reflect git reality. [1-5-the-masking-loop-copy.md:122]
+- [ ] [AI-Review][MEDIUM] Test Fragility: `MaskingLoopTests.testMaskingLoop_RaceCondition` relies on non-deterministic `Task.sleep`. Refactor to use `AsyncStream` or continuations for precise task state synchronization. [MaskingLoopTests.swift:90]
+- [ ] [AI-Review][LOW] Tech Debt: `MockRegexEngine` uses brittle injection of `MatchResult`. Refactor to support dynamic content matching for more robust testing. [MockServices.swift]
 
 ## Dev Agent Record
 
@@ -141,9 +143,9 @@ So that my development flow is not interrupted while my secrets are secured in R
 - CodeMask/CodeMask/Features/Session/SessionActor.swift
 - CodeMask/CodeMask/App/AppEnvironment.swift
 - CodeMask/CodeMask/App/AppStore.swift
-- CodeMaskTests/Core/Services/ProtocolConformanceTests.swift
-- CodeMaskTests/Mocks/MockServices.swift
-- CodeMaskTests/Features/Clipboard/MaskingLoopTests.swift
+- CodeMask/CodeMaskTests/Core/Services/ProtocolConformanceTests.swift
+- CodeMask/CodeMaskTests/Mocks/MockServices.swift
+- CodeMask/CodeMaskTests/Features/Clipboard/MaskingLoopTests.swift
 - CodeMaskTests/Features/HUD/HUDRaceConditionTests.swift
 
 ## Change Log
