@@ -95,7 +95,16 @@ So that my development flow is not interrupted while my secrets are secured in R
 *   **Rule**: "Actions MUST describe Events".
 
 
+## Review Follow-ups (AI)
+
+- [x] [AI-Review][HIGH] HUD Race Condition: `.show` action starts a new `Task` without cancelling the previous auto-hide task. Multiple triggers will cause HUD to disappear prematurely. [AppStore.swift:217]
+- [x] [AI-Review][HIGH] State Deadlock on Cancellation: When `maskingTask` is cancelled via `Task.isCancelled`, it returns early without dispatching `.maskingSequenceCompleted`. This leaves `clipboard.isMasking = true` indefinitely. [AppStore.swift:151]
+- [x] [AI-Review][MEDIUM] Missing Resource Preparation: Story AC 3 requires calling `prepare()` on haptics and audio services at launch. Currently missing in `AppStore.init` or `didLaunch`. [AppStore.swift:54]
+- [x] [AI-Review][MEDIUM] Task Reference Cleanup: `maskingTask` reference should be nil'd out in `.maskingSequenceCompleted` to avoid holding onto finished tasks. [AppStore.swift:183]
+- [x] [AI-Review][LOW] Documentation Consistency: The File List mentions `ProtocolConformanceTests.swift` in `Core/Services`, but it was moved to `CodeMaskTests`. Update story to reflect git reality. [1-5-the-masking-loop-copy.md:122]
+
 ## Dev Agent Record
+
 
 ### Agent Model Used
 
@@ -114,12 +123,18 @@ So that my development flow is not interrupted while my secrets are secured in R
 
 ### Completion Notes List
 
+- ✅ Resolved review finding [HIGH]: HUD Race Condition - Added `hudAutoHideTask` tracking and cancellation in `reduce(hud:)`. Created comprehensive race condition tests.
+- ✅ Resolved review finding [HIGH]: State Deadlock on Cancellation - Added `defer` cleanup in masking task to ensure state reset on cancellation.
+- ✅ Resolved review finding [MEDIUM]: Missing Resource Preparation - Added `prepare()` calls for haptics and audio in `.didLaunch`.
+- ✅ Resolved review finding [MEDIUM]: Task Reference Cleanup - Added `maskingTask = nil` in `.maskingSequenceCompleted`.
+- ✅ Resolved review finding [LOW]: Documentation Consistency - Corrected File List to reflect actual test file location.
+
 ### File List
 
 - CodeMask/CodeMask/Core/Services/PasteboardService.swift
 - CodeMask/CodeMask/Core/Services/HapticService.swift
 - CodeMask/CodeMask/Core/Services/AudioService.swift
-- CodeMask/CodeMask/Core/Services/ProtocolConformanceTests.swift (Moved to Tests)
+
 - CodeMask/CodeMask/Features/Clipboard/RegexEngine.swift
 - CodeMask/CodeMask/Features/Clipboard/Clipboard.swift
 - CodeMask/CodeMask/Features/HUD/HUD.swift
@@ -129,7 +144,9 @@ So that my development flow is not interrupted while my secrets are secured in R
 - CodeMaskTests/Core/Services/ProtocolConformanceTests.swift
 - CodeMaskTests/Mocks/MockServices.swift
 - CodeMaskTests/Features/Clipboard/MaskingLoopTests.swift
+- CodeMaskTests/Features/HUD/HUDRaceConditionTests.swift
 
 ## Change Log
 
 - 2026-01-30: Implemented Masking Loop logic, added services (Pasteboard, Haptic, Audio), updated SessionActor, added Tests. (Gemini)
+- 2026-01-30: Addressed code review findings - 5 items resolved: HUD race condition fix, state deadlock fix, resource preparation, task cleanup, documentation update. (Claude 4.5 Sonnet)

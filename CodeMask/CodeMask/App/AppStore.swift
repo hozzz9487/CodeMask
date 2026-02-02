@@ -27,6 +27,7 @@ final class AppStore {
     
     // Internal Task Management
     private var maskingTask: Task<Void, Never>?
+    private var hudAutoHideTask: Task<Void, Never>?
     
     // Track previous permission state to detect changes
     @ObservationIgnored private var previousPermissionState: Security.Permissions.State? = nil
@@ -52,8 +53,9 @@ final class AppStore {
     func send(_ action: AppAction) {
         switch action {
         case .didLaunch:
-            // Future: Check permissions, start services
-            break
+            // Prepare feedback resources (Story 1.5 AC 3)
+            environment.haptics.prepare()
+            environment.audio.prepare(sound: .tink)
             
         case .security(let action):
             reduce(security: action)
@@ -147,11 +149,22 @@ final class AppStore {
             
             // 2. Start new detached task (Non-Blocking)
             maskingTask = Task.detached { [weak self, environment = self.environment] in
+                // Track if we should cleanup on cancellation
+                defer {
+                    // Ensure state cleanup on cancellation or early exit
+                    if Task.isCancelled {
+                        Task { @MainActor in
+                            await self?.send(.clipboard(.maskingSequenceCompleted(.success(false))))
+                        }
+                    }
+                }
+                
                 // Check for cancellation early
                 if Task.isCancelled { return }
                 
                 // Read
                 guard let content = await environment.pasteboard.string(), !content.isEmpty else {
+                    // Don't use defer path for intentional completion
                     await self?.send(.clipboard(.maskingSequenceCompleted(.success(false))))
                     return
                 }
@@ -181,6 +194,8 @@ final class AppStore {
             }
             
         case .maskingSequenceCompleted(let result):
+            // Clean up task reference
+            maskingTask = nil
             clipboard.isMasking = false
             
             switch result {
@@ -209,19 +224,26 @@ final class AppStore {
     private func reduce(hud action: HUD.Action) {
         switch action {
         case .show(let message, let type):
+            // Cancel previous auto-hide task (Conflated Task Pattern)
+            hudAutoHideTask?.cancel()
+            
             hud.message = message
             hud.type = type
             hud.isVisible = true
             
             // Auto hide
-             Task { @MainActor in
-                 try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5s
-                 if !Task.isCancelled {
+            hudAutoHideTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5s
+                if !Task.isCancelled {
                     send(.hud(.hide))
-                 }
-             }
+                }
+            }
             
         case .hide:
+            // Clean up task reference
+            hudAutoHideTask?.cancel()
+            hudAutoHideTask = nil
+            
             hud.message = ""
             hud.isVisible = false
         }
