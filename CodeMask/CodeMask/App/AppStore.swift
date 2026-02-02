@@ -149,16 +149,6 @@ final class AppStore {
             
             // 2. Start new detached task (Non-Blocking)
             maskingTask = Task.detached { [weak self, environment = self.environment] in
-                // Track if we should cleanup on cancellation
-                defer {
-                    // Ensure state cleanup on cancellation or early exit
-                    if Task.isCancelled {
-                        Task { @MainActor in
-                            await self?.send(.clipboard(.maskingSequenceCompleted(.success(false))))
-                        }
-                    }
-                }
-                
                 // Check for cancellation early
                 if Task.isCancelled { return }
                 

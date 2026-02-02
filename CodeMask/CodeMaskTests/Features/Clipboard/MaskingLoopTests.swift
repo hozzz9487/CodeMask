@@ -138,6 +138,15 @@ final class MaskingLoopTests: XCTestCase {
         
         let storedB = await mockSession.getStoredContent(for: "B")
         XCTAssertEqual(storedB, "Secret B")
+        
+        // CRITICAL: Verify NO feedback for the cancelled task
+        // We triggered twice, but only the second one should complete.
+        // If the first one wasn't silent on cancel, count would be 2.
+        let hapticCount = mockHaptics.playCallCount
+        XCTAssertEqual(hapticCount, 1, "Cancelled task A should NOT trigger haptics")
+        
+        let audioCount = mockAudio.playCallCount
+        XCTAssertEqual(audioCount, 1, "Cancelled task A should NOT trigger audio")
     }
     
     // Helper
