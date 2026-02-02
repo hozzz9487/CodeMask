@@ -32,6 +32,7 @@ struct CodeMaskApp: App {
 // MARK: - AppDelegate with Smart Permission Handling
 class AppDelegate: NSObject, NSApplicationDelegate {
     var menuBarManager: MenuBarManager?
+    var hudManager: HUDManager?
     private var cancellables = Set<AnyCancellable>()
     private let logger = Logger(subsystem: "com.edsncfw.CodeMask", category: "AppDelegate")
     
@@ -45,6 +46,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize Menu Bar Manager
         menuBarManager = MenuBarManager(store: AppStore.shared)
+        
+        // Initialize HUD Manager
+        hudManager = HUDManager(store: AppStore.shared)
         
         // Register Global Hotkeys
         AppStore.shared.environment.hotkeyManager.registerHotkeys()

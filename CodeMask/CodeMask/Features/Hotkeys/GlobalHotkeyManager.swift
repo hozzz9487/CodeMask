@@ -60,7 +60,8 @@ final class GlobalHotkeyManager: HotkeyServiceProtocol {
         
         logger.info("Registering global hotkeys...")
         
-        let modifiers = UInt32(cmdKey | optionKey)
+        // Change from optionKey to controlKey to match Cmd+Ctrl+C requirement
+        let modifiers = UInt32(cmdKey | controlKey)
         
         register(id: .masking, keyCode: VirtualKeyCode.c.rawValue, modifiers: modifiers)
         register(id: .restoration, keyCode: VirtualKeyCode.v.rawValue, modifiers: modifiers)

@@ -47,6 +47,11 @@ final class AppStore {
     
     init(environment: AppEnvironment) {
         self.environment = environment
+        
+        // Initial Rule Load (Story 1.5 readiness)
+        Task {
+            _ = await environment.regexEngine.updateRules(Clipboard.Rule.defaults)
+        }
     }
     
     // MARK: - Action Dispatch
