@@ -22,35 +22,42 @@ so that **I am protected out of the box without complex configuration**.
 
 ## Tasks / Subtasks
 
+- [ ] **Model Updates** (Critical Pre-requisites)
+  - [ ] Update `Clipboard.Rule` struct in `Features/Clipboard/Models/Rule.swift`:
+    - [ ] Add `Codable` conformance.
+    - [ ] Add `name: String` property (e.g., "iOS Bundle ID") to support named presets.
+    - [ ] Update `init` and `defaults` to include the new `name` field.
+
 - [ ] **Data Resource Creation**
-  - [ ] Create directory `CodeMask/Resources/Presets/` if it doesn't exist.
-  - [ ] Create `MobilePack.json` defining the regex rules for iOS and Android secrets.
-  - [ ] Ensure JSON structure validates against the `RuleSet` model (or implicit model used by RegexEngine).
+  - [ ] Create directory `CodeMask/Resources/Presets/`.
+  - [ ] Create `MobilePack.json` containing the array of Rule objects.
+  - [ ] **Schema Requirements**: JSON must be an array of objects matching the updated `Rule` struct:
+    ```json
+    [ { "id": "UUID-STRING", "name": "Pattern Name", "pattern": "REGEX", "isEnabled": true } ]
+    ```
 
 - [ ] **Logic Implementation**
-  - [ ] Implement/Update `PresetLoader` (or equivalent in `ProfileManager`/`RegexEngine`) to load `MobilePack.json` from the Main Bundle.
-  - [ ] Ensure default profile initializes with these rules active.
-  - [ ] Verify `CodeMask/Features/Profiles/` structure encompasses preset loading if `ProfileManager` is already present, otherwise handle in `RegexEngine`.
+  - [ ] Create `PresetLoader.swift` in `Features/Clipboard/Services/` (or `Utilities/`) to load `MobilePack.json` from the Main Bundle.
+  - [ ] Update `RegexEngine` (or the app startup flow) to load these presets and merge them with default rules.
+  - [ ] **Constraint**: Do NOT create `ProfileManager` yet (Epic 3). Keep logic self-contained within `Features/Clipboard`.
 
 - [ ] **Testing & Validation**
-  - [ ] Add unit tests in `CodeMaskTests` verifying identifying valid Bundle IDs, Team IDs, etc.
-  - [ ] Add unit tests verifying *false positives* are minimized.
-  - [ ] Performance benchmark: Ensure regex matching stays under 10 ms for typical clipboard payloads, contributing to the total <100ms budget.
+  - [ ] Unit Test: Verify `Clipboard.Rule` encodes/decodes correctly.
+  - [ ] Integration Test: Ensure `MobilePack.json` is successfully loaded and parsed.
+  - [ ] Performance: Verify loading presets does not violate the <100ms startup budget.
 
 ## Dev Notes
 
-- **Architecture Patterns**:
-  - Use **Native Swift Regex** (Swift 5.7+).
-  - Store presets in `Resources/Presets/` as per Architecture Spec.
-  - Load via `Bundle.main.url(forResource:...)`.
-  
-- **Project Structure**:
-  - `CodeMask/Resources/Presets/MobilePack.json`
-  - `CodeMask/Features/Profiles/ProfileManager.swift` (likely place for loading logic if it exists, else `RegexEngine.swift`).
+### Recommended Regex Patterns (Reference)
+- **iOS Bundle ID**: `\bcom\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\b`
+- **Apple Team ID**: `\b[A-Z0-9]{10}\b` (e.g., `34A56789BC`)
+- **Android Keystore Passwords**: `(?i)(storePassword|keyPassword)[\s:=]{1,10}\S+`
+- **Google/Firebase API Key**: `AIza[0-9A-Za-z-_]{35}`
 
-- **Testing Standards**:
-  - Use `XCTest` with sample data.
-  - No external dependencies.
+### Implementation Guide
+- **Model Changes**: The current `Rule` struct is missing `Codable` and `name`. These are essential for file-based presets.
+- **Directory**: `CodeMask/Resources/Presets/` is the correct location for data files.
+- **Loading**: Use `JSONDecoder` with `Bundle.main.url(forResource:...)`.
 
 ### References
 
