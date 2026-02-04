@@ -19,6 +19,7 @@ struct AppEnvironment {
     var haptics: HapticServiceProtocol
     var audio: AudioServiceProtocol
     var regexEngine: Clipboard.RegexEngineProtocol
+    var keyboard: KeyboardServiceProtocol
     
     // var clipboardMonitor: ClipboardMonitorProtocol
     
@@ -29,7 +30,8 @@ struct AppEnvironment {
         pasteboard: PasteboardServiceProtocol = LivePasteboardService(),
         haptics: HapticServiceProtocol = LiveHapticService(),
         audio: AudioServiceProtocol = LiveAudioService(),
-        regexEngine: Clipboard.RegexEngineProtocol = Clipboard.RegexEngine()
+        regexEngine: Clipboard.RegexEngineProtocol = Clipboard.RegexEngine(),
+        keyboard: KeyboardServiceProtocol = LiveKeyboardService()
     ) {
         self.permissionsManager = permissionsManager
         self.hotkeyManager = hotkeyManager
@@ -38,5 +40,6 @@ struct AppEnvironment {
         self.haptics = haptics
         self.audio = audio
         self.regexEngine = regexEngine
+        self.keyboard = keyboard
     }
 }

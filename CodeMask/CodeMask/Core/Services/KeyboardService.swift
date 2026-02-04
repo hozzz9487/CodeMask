@@ -1,0 +1,35 @@
+
+import Foundation
+import CoreGraphics
+
+protocol KeyboardServiceProtocol: Sendable {
+    /// Simulates a Command + C keystroke to trigger a copy action in the active app.
+    func simulateCopy() async
+}
+
+final class LiveKeyboardService: KeyboardServiceProtocol {
+    func simulateCopy() async {
+        let source = CGEventSource(stateID: .combinedSessionState)
+        
+        // Command down
+        let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: true)
+        // C down
+        let cDown = CGEvent(keyboardEventSource: source, virtualKey: 0x08, keyDown: true)
+        cDown?.flags = .maskCommand
+        
+        // C up
+        let cUp = CGEvent(keyboardEventSource: source, virtualKey: 0x08, keyDown: false)
+        cUp?.flags = .maskCommand
+        // Command up
+        let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: 0x37, keyDown: false)
+        
+        cmdDown?.post(tap: .cgAnnotatedSessionEventTap)
+        cDown?.post(tap: .cgAnnotatedSessionEventTap)
+        cUp?.post(tap: .cgAnnotatedSessionEventTap)
+        cmdUp?.post(tap: .cgAnnotatedSessionEventTap)
+        
+        // Small delay to allow the active application to process the copy event
+        // and update the NSPasteboard.
+        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+    }
+}

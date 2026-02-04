@@ -217,6 +217,7 @@ CodeMask/
 │   ├── Core/
 │   │   ├── Extensions/ (NSPasteboard+, String+, etc.)
 │   │   ├── Security/ (MemoryLocking, Crypto)
+│   │   ├── Services/ (System Services: Pasteboard, Keyboard, Audio, Haptics)
 │   │   └── Utilities/ (Logger, JSONCoder)
 │   ├── Features/
 │   │   ├── Clipboard/

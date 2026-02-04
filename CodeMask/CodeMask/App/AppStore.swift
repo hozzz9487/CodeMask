@@ -157,6 +157,11 @@ final class AppStore {
                 // Check for cancellation early
                 if Task.isCancelled { return }
                 
+                // NEW: Trigger automated Copy action from the current app
+                await environment.keyboard.simulateCopy()
+                
+                if Task.isCancelled { return }
+                
                 // Read
                 guard let content = await environment.pasteboard.string(), !content.isEmpty else {
                     // Don't use defer path for intentional completion
