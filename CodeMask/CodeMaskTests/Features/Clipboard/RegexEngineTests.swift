@@ -93,4 +93,18 @@ final class RegexEngineTests: XCTestCase {
         // AC says < 100ms (0.1s)
         XCTAssertLessThan(duration, 0.1, "Masking took too long: \(duration)s")
     }
+    
+    func testReplace() async {
+        let input = "Here is {{CM_T:1234567890ab}} and {{CM_T:deadbeef0000}}"
+        let mapping: [String: String?] = [
+            "1234567890ab": "mySecret",
+            "deadbeef0000": nil
+        ]
+        
+        let result = await sut.replace(content: input, mapping: mapping)
+        
+        XCTAssertTrue(result.contains("Here is mySecret"))
+        XCTAssertTrue(result.contains("and >>MISSING_SECRET<<"))
+        XCTAssertFalse(result.contains("{{CM_T:"))
+    }
 }

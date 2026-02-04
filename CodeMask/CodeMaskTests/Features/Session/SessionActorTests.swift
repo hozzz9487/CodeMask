@@ -38,4 +38,25 @@ final class SessionActorTests: XCTestCase {
         XCTAssertEqual(retrieved1, secret1)
         XCTAssertEqual(retrieved2, secret2)
     }
+    
+    func testBatchResolve() async {
+        let actor = SessionActor()
+        let batch = [
+            "id1": "secret1",
+            "id2": "secret2"
+        ]
+        
+        // Populate
+        await actor.store(batch: batch)
+        
+        // Resolve subset + missing
+        let tokensToResolve = ["id1", "id2", "missingID"]
+        // This will fail to compile until resolve is implemented
+        let results = await actor.resolve(tokens: tokensToResolve)
+        
+        XCTAssertEqual(results["id1"], "secret1")
+        XCTAssertEqual(results["id2"], "secret2")
+        // Fix warning about implicit coercion
+        XCTAssertNil(results["missingID"] as Any?)
+    }
 }

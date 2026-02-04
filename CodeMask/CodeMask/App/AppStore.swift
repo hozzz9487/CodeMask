@@ -27,6 +27,7 @@ final class AppStore {
     
     // Internal Task Management
     private var maskingTask: Task<Void, Never>?
+    private var restorationTask: Task<Void, Never>?
     private var hudAutoHideTask: Task<Void, Never>?
     
     // Track previous permission state to detect changes
@@ -106,7 +107,8 @@ final class AppStore {
         case .didTriggerRestoration:
             hotkeys.lastTriggeredHotkey = action
             hotkeys.lastHotkeyTriggerTime = Date()
-            // Future: Trigger restoration engine (Story 1.6)
+            // Trigger restoration engine (Story 1.6)
+            send(.clipboard(.startRestoration))
             
         case .didFailToRegister(let error):
             hotkeys.lastError = error
@@ -217,6 +219,114 @@ final class AppStore {
                 environment.haptics.play(.alignment)
                 environment.audio.playSystemSound(.alert)
                 send(.hud(.show(message: "Error", type: .error)))
+            }
+            
+        case .startRestoration:
+            // 1. Cancel previous task (Conflated Task Pattern)
+            restorationTask?.cancel()
+            
+            // 2. Start new detached task (Non-Blocking)
+            restorationTask = Task.detached { [weak self, environment = self.environment] in
+                if Task.isCancelled { return }
+                
+                // 1. Read
+                guard let content = await environment.pasteboard.string(), !content.isEmpty else {
+                    await self?.send(.clipboard(.restorationSequenceCompleted(.noTokensFound)))
+                    return
+                }
+                
+                // 2. Scan (Pattern: {{CM_T:[a-f0-9]{12}}})
+                let pattern = "\\{\\{CM_T:([a-f0-9]{12})\\}\\}"
+                // We use standard regex here since RegexEngine abstraction is for masking/replacing rules.
+                // Or we can assume RegexEngine has a helper, but standard String regex is fine for this specific token extraction.
+                // HOWEVER, the AC says "Use RegexEngine to identify".
+                // Since RegexEngine doesn't have a "scanForTokens" method exposed in protocol (only mask/replace),
+                // we will extract manually or use replace directly if we trust it.
+                // The most robust way per AC "Scan: Use RegexEngine to identify" implies we should probably rely on `replace` to do the heavy lifting
+                // OR we just parse IDs to resolve them first.
+                // Let's iterate manually to find IDs for resolution.
+                
+                guard let regex = try? Regex(pattern) else {
+                    await self?.send(.clipboard(.restorationSequenceCompleted(.noTokensFound)))
+                    return
+                }
+                
+                let matches = content.matches(of: regex)
+                if matches.isEmpty {
+                    await self?.send(.clipboard(.restorationSequenceCompleted(.noTokensFound)))
+                    return
+                }
+                
+                // Extract unique IDs
+                let ids = Set(matches.compactMap { match -> String? in
+                    // Group 1 is the ID
+                    if match.output.count > 1 {
+                        let substring = match.output[1].substring
+                        return String(substring ?? "")
+                    }
+                    return nil
+                })
+                
+                if ids.isEmpty {
+                    await self?.send(.clipboard(.restorationSequenceCompleted(.noTokensFound)))
+                    return
+                }
+                
+                // 3. Lookup
+                let mapping = await environment.session.resolve(tokens: Array(ids))
+                
+                // 4. Reconstruct
+                let restoredContent = await environment.regexEngine.replace(content: content, mapping: mapping)
+                
+                // 5. Action Branching - Restoration Occurred
+                // Secure Paste Dance
+                
+                let maskedContent = content
+                
+                // Prepare Secret
+                await environment.pasteboard.setString(restoredContent)
+                
+                // Execute Paste
+                await environment.keyboard.simulatePaste()
+                
+                // Wait for system consumption (200ms) with Cancellation handling
+                do {
+                    try await Task.sleep(nanoseconds: 200_000_000)
+                } catch {
+                    // Task cancelled or interrupted, but we MUST proceed to cleanup
+                }
+                
+                // Restore Safety (runs regardless of cancellation during sleep)
+                await environment.pasteboard.setString(maskedContent)
+                
+                // Determine success/partial
+                let hasMissing = mapping.values.contains(where: { $0 == nil })
+                
+                if hasMissing {
+                    await self?.send(.clipboard(.restorationSequenceCompleted(.partialSuccess)))
+                } else {
+                    await self?.send(.clipboard(.restorationSequenceCompleted(.success)))
+                }
+            }
+            
+        case .restorationSequenceCompleted(let status):
+            restorationTask = nil
+            
+            switch status {
+            case .success:
+                environment.haptics.play(.generic) // "Tap" implied by AC
+                environment.audio.playSystemSound(.tink)
+                send(.hud(.show(message: "Restored", type: .success)))
+                
+            case .partialSuccess:
+                environment.haptics.play(.alignment) // Warning
+                // AC says "Thump" + Alignment. .alert usually maps to Thump/Basso.
+                environment.audio.playSystemSound(.alert)
+                send(.hud(.show(message: "Missing Secrets", type: .error)))
+                
+            case .noTokensFound:
+                // AC: HUD "No Tokens" (Grey). No paste modification.
+                send(.hud(.show(message: "No Tokens", type: .info)))
             }
         }
     }

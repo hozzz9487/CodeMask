@@ -7,6 +7,7 @@ protocol SessionStorageProtocol: Actor {
     func store(content: String) -> UUID
     func store(batch: [String: String])
     func retrieve(id: UUID) -> String?
+    func resolve(tokens: [String]) -> [String: String?]
     func clear()
 }
 
@@ -49,6 +50,21 @@ actor SessionActor: SessionStorageProtocol {
     /// - Returns: The original string if found, otherwise nil.
     func retrieve(id: UUID) -> String? {
         return retrieve(idString: id.uuidString)
+    }
+    
+    /// Batch resolves tokens to their original secrets.
+    /// - Parameter tokens: List of token IDs (short IDs).
+    /// - Returns: Dictionary mapping token ID to secret (or nil if not found).
+    func resolve(tokens: [String]) -> [String: String?] {
+        var results: [String: String?] = [:]
+        for token in tokens {
+            if let buffer = storage[token] {
+                results[token] = buffer.retrieve()
+            } else {
+                results[token] = nil
+            }
+        }
+        return results
     }
     
     /// Retrieves content for a given string ID.

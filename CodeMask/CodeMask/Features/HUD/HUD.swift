@@ -12,6 +12,7 @@ enum HUD {
             case neutral
             case success
             case error
+            case info
         }
     }
     

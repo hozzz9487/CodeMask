@@ -11,6 +11,7 @@ extension Clipboard {
     protocol RegexEngineProtocol: Actor {
         func updateRules(_ rules: [Rule]) -> RuleUpdateReport
         func mask(_ content: String) async -> MatchResult
+        func replace(content: String, mapping: [String: String?]) async -> String
     }
 
     actor RegexEngine: RegexEngineProtocol {
@@ -60,6 +61,50 @@ extension Clipboard {
                 invalidCount: invalidIDs.count,
                 invalidRules: invalidIDs
             )
+        }
+        
+        func replace(content: String, mapping: [String: String?]) async -> String {
+            // Regex for token: {{CM_T:[a-f0-9]{12}}}
+            let pattern = "\\{\\{CM_T:[a-f0-9]{12}\\}\\}"
+            guard let regex = try? Regex(pattern) else {
+                logger.error("Failed to compile replacement regex")
+                return content
+            }
+            
+            var result = ""
+            var currentIndex = content.startIndex
+            
+            let matches = content.matches(of: regex)
+            
+            for match in matches {
+                // Append text before match
+                if match.range.lowerBound > currentIndex {
+                    result.append(contentsOf: content[currentIndex..<match.range.lowerBound])
+                }
+                
+                let fullToken = content[match.range]
+                // Extract ID: {{CM_T: (7 chars) ... }} (2 chars)
+                // Length is 7 + 12 + 2 = 21
+                let idStartIndex = fullToken.index(fullToken.startIndex, offsetBy: 7)
+                let idEndIndex = fullToken.index(idStartIndex, offsetBy: 12)
+                let id = String(fullToken[idStartIndex..<idEndIndex])
+                
+                if let secretOpt = mapping[id], let secret = secretOpt {
+                    result.append(secret)
+                } else {
+                    // Mapping missing or value is nil
+                    result.append(">>MISSING_SECRET<<")
+                }
+                
+                currentIndex = match.range.upperBound
+            }
+            
+            // Append remaining
+            if currentIndex < content.endIndex {
+                result.append(contentsOf: content[currentIndex..<content.endIndex])
+            }
+            
+            return result
         }
         
         func mask(_ content: String) async -> MatchResult {

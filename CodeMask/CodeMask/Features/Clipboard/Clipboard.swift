@@ -17,6 +17,14 @@ enum Clipboard {
     
     enum Action {
         case startMasking
-        case maskingSequenceCompleted(Result<Bool, Error>) 
+        case maskingSequenceCompleted(Result<Bool, Error>)
+        case startRestoration
+        case restorationSequenceCompleted(RestorationStatus)
+    }
+    
+    enum RestorationStatus {
+        case success
+        case partialSuccess
+        case noTokensFound
     }
 }

@@ -1,6 +1,6 @@
 # Story 1.6: The Restoration Loop (Paste)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -72,21 +72,21 @@ This sequence MUST be implemented in the `AppStore` reducer to ensure zero leaka
 
 ## Tasks
 
-- [ ] **Service Enhancements**
-    - [ ] Update `KeyboardService` with `simulatePaste()` (Cmd+V) and modifier safety logic.
-    - [ ] Update `SessionActor` with `resolve(tokens: [String]) -> [String: String?]` batch lookup.
-    - [ ] Update `RegexEngine` with `replace(content: String, mapping: [String: String?])` and `>>MISSING_SECRET<<` handling.
-- [ ] **Restoration Logic (AppStore)**
-    - [ ] Implement `.startRestoration` action handling with "Secure Paste Dance".
-    - [ ] Implement Task cancellation/conflation.
-- [ ] **Feedback Wiring**
-    - [ ] Wire up `.restorationSequenceCompleted` to HUD/Audio/Haptics.
-- [ ] **Tests**
-    - [ ] `RestorationLoopTests.swift`:
-        - [ ] Test full hit (all tokens found).
-        - [ ] Test partial miss (insert `>>MISSING_SECRET<<`).
-        - [ ] Test "No Tokens" scenario (verify no clipboard change).
-        - [ ] Test "Secure Paste Dance" cleanup (verify clipboard is restored to safe state).
+- [x] **Service Enhancements**
+    - [x] Update `KeyboardService` with `simulatePaste()` (Cmd+V) and modifier safety logic.
+    - [x] Update `SessionActor` with `resolve(tokens: [String]) -> [String: String?]` batch lookup.
+    - [x] Update `RegexEngine` with `replace(content: String, mapping: [String: String?])` and `>>MISSING_SECRET<<` handling.
+- [x] **Restoration Logic (AppStore)**
+    - [x] Implement `.startRestoration` action handling with "Secure Paste Dance".
+    - [x] Implement Task cancellation/conflation.
+- [x] **Feedback Wiring**
+    - [x] Wire up `.restorationSequenceCompleted` to HUD/Audio/Haptics.
+- [x] **Tests**
+    - [x] `RestorationLoopTests.swift`:
+        - [x] Test full hit (all tokens found).
+        - [x] Test partial miss (insert `>>MISSING_SECRET<<`).
+        - [x] Test "No Tokens" scenario (verify no clipboard change).
+        - [x] Test "Secure Paste Dance" cleanup (verify clipboard is restored to safe state).
 
 ## Dev Notes
 
@@ -106,3 +106,39 @@ This sequence MUST be implemented in the `AppStore` reducer to ensure zero leaka
 *   [Source: Features/Session/SessionActor.swift]
 *   [Source: Features/Clipboard/RegexEngine.swift]
 *   [Source: App/AppStore.swift]
+
+## Dev Agent Record
+
+### Implementation Plan
+- Implemented `KeyboardService.simulatePaste()` ensuring modifier safety by forcing `.maskCommand` flag on generated events.
+- Implemented `SessionActor.resolve(tokens:)` for batch lookup.
+- Implemented `RegexEngine.replace(content:mapping:)` with `>>MISSING_SECRET<<` handling.
+- Implemented `AppStore` reduction for `.startRestoration` including "Secure Paste Dance" and feedback wiring.
+
+### Completion Notes
+- Verified `simulatePaste` implementation with API tests.
+- Verified `SessionActor.resolve` with batch lookup tests.
+- Verified `RegexEngine.replace` with unit tests covering missing secret scenarios.
+- Implemented robust `AppStore` logic with task cancellation safety.
+- Verified Restoration Loop logic with comprehensive tests in `RestorationLoopTests.swift`.
+
+## File List
+- CodeMask/CodeMask/Core/Services/KeyboardService.swift
+- CodeMask/CodeMaskTests/CodeMaskTests.swift
+- CodeMask/CodeMask/Features/Session/SessionActor.swift
+- CodeMask/CodeMaskTests/Features/Session/SessionActorTests.swift
+- CodeMask/CodeMask/Features/Clipboard/RegexEngine.swift
+- CodeMask/CodeMaskTests/Features/Clipboard/RegexEngineTests.swift
+- CodeMask/CodeMaskTests/Mocks/MockServices.swift
+- CodeMask/CodeMask/App/AppStore.swift
+- CodeMask/CodeMask/Features/Clipboard/Clipboard.swift
+- CodeMask/CodeMask/Features/HUD/HUD.swift
+- CodeMask/CodeMask/Features/HUD/HUDView.swift
+- CodeMask/CodeMaskTests/Features/Clipboard/RestorationLoopTests.swift
+
+## Change Log
+- 2026-02-04: Implemented KeyboardService.simulatePaste.
+- 2026-02-04: Implemented SessionActor.resolve.
+- 2026-02-04: Implemented RegexEngine.replace.
+- 2026-02-04: Implemented AppStore restoration logic.
+- 2026-02-04: Implemented RestorationLoopTests.

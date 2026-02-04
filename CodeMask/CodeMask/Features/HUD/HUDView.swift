@@ -33,6 +33,7 @@ struct HUDView: View {
         case .success: return "checkmark.shield.fill"
         case .error: return "exclamationmark.shield.fill"
         case .neutral: return "shield.fill"
+        case .info: return "info.circle.fill"
         }
     }
     
@@ -41,6 +42,7 @@ struct HUDView: View {
         case .success: return Color.blue // Story 1.5 decision: Use Blue for both Success cases
         case .error: return Color.red
         case .neutral: return Color.gray
+        case .info: return Color.gray
         }
     }
 }

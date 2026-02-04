@@ -112,6 +112,24 @@ actor MockRegexEngine: Clipboard.RegexEngineProtocol {
         return Clipboard.MatchResult(maskedString: content, secrets: [:])
     }
     
+    func replace(content: String, mapping: [String: String?]) async -> String {
+        // Simple mock implementation that doesn't actually parse regex but serves testing needs if needed.
+        // Or we can just return a pre-set value.
+        // For better testing, let's do a naive replace if possible, or just return content + " [Restored]"
+        
+        // Naive mock replacement for known patterns
+        var result = content
+        for (id, secretOpt) in mapping {
+            let token = "{{CM_T:\(id)}}"
+            if let secret = secretOpt {
+                result = result.replacingOccurrences(of: token, with: secret)
+            } else {
+                result = result.replacingOccurrences(of: token, with: ">>MISSING_SECRET<<")
+            }
+        }
+        return result
+    }
+    
     func setDelay(_ nanos: UInt64?) {
         self.delayNanoseconds = nanos
     }
@@ -143,6 +161,14 @@ actor MockSessionActor: SessionStorageProtocol {
         return storage[id.uuidString]
     }
     
+    func resolve(tokens: [String]) -> [String: String?] {
+        var results: [String: String?] = [:]
+        for token in tokens {
+            results[token] = storage[token]
+        }
+        return results
+    }
+    
     func clear() {
         storage.removeAll()
     }
@@ -154,5 +180,25 @@ actor MockSessionActor: SessionStorageProtocol {
     
     func count() -> Int {
         return storage.count
+    }
+}
+
+// MARK: - Mock Keyboard
+
+final class MockKeyboardService: KeyboardServiceProtocol, @unchecked Sendable {
+    
+    private let lock = NSLock()
+    private var _simulateCopyCallCount = 0
+    private var _simulatePasteCallCount = 0
+    
+    var simulateCopyCallCount: Int { lock.withLock { _simulateCopyCallCount } }
+    var simulatePasteCallCount: Int { lock.withLock { _simulatePasteCallCount } }
+    
+    func simulateCopy() async {
+        lock.withLock { _simulateCopyCallCount += 1 }
+    }
+    
+    func simulatePaste() async {
+        lock.withLock { _simulatePasteCallCount += 1 }
     }
 }
