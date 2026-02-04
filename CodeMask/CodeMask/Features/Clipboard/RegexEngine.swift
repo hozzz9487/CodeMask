@@ -12,12 +12,25 @@ extension Clipboard {
         func updateRules(_ rules: [Rule]) -> RuleUpdateReport
         func mask(_ content: String) async -> MatchResult
         func replace(content: String, mapping: [String: String?]) async -> String
+        func scanForTokenIDs(_ content: String) async -> [String]
     }
 
     actor RegexEngine: RegexEngineProtocol {
         private var cachedRegexes: [Rule.ID: Regex<AnyRegexOutput>] = [:]
         private var combinedRegex: Regex<AnyRegexOutput>?
+        private let tokenRegex: Regex<AnyRegexOutput>?
         private let logger = Logger(subsystem: "com.edsncfw.CodeMask", category: "RegexEngine")
+        
+        init() {
+            // Pre-compile the token regex
+            let pattern = "\\{\\{CM_T:([a-f0-9]{12})\\}\\}"
+            do {
+                self.tokenRegex = try Regex(pattern)
+            } catch {
+                print("Critical: Failed to compile token regex: \(error)")
+                self.tokenRegex = nil
+            }
+        }
         
         func updateRules(_ rules: [Rule]) -> RuleUpdateReport {
             var newCache: [Rule.ID: Regex<AnyRegexOutput>] = [:]
@@ -63,11 +76,25 @@ extension Clipboard {
             )
         }
         
+        func scanForTokenIDs(_ content: String) async -> [String] {
+            guard let regex = tokenRegex else { return [] }
+            
+            let matches = content.matches(of: regex)
+            let ids = matches.compactMap { match -> String? in
+                // Group 1 is the ID
+                if match.output.count > 1 {
+                    let substring = match.output[1].substring
+                    return String(substring ?? "")
+                }
+                return nil
+            }
+            // Return unique IDs
+            return Array(Set(ids))
+        }
+        
         func replace(content: String, mapping: [String: String?]) async -> String {
-            // Regex for token: {{CM_T:[a-f0-9]{12}}}
-            let pattern = "\\{\\{CM_T:[a-f0-9]{12}\\}\\}"
-            guard let regex = try? Regex(pattern) else {
-                logger.error("Failed to compile replacement regex")
+            guard let regex = tokenRegex else {
+                logger.error("Token regex not available")
                 return content
             }
             

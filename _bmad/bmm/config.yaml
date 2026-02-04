@@ -6,7 +6,7 @@
 project_name: CodeMask
 user_skill_level: intermediate
 planning_artifacts: "{project-root}/_bmad-output/project-planning-artifacts"
-implementation_artifacts: "{project-root}/_bmad-output/implementation-artifacts"
+sprint_artifacts: "{project-root}/_bmad-output/sprint-artifacts"
 project_knowledge: "{project-root}/docs"
 
 # Core Configuration Values

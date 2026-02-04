@@ -112,6 +112,25 @@ actor MockRegexEngine: Clipboard.RegexEngineProtocol {
         return Clipboard.MatchResult(maskedString: content, secrets: [:])
     }
     
+    func scanForTokenIDs(_ content: String) async -> [String] {
+        // Simple manual extraction for mock
+        // Assumes format {{CM_T:id}}
+        // Regex: {{CM_T:([a-f0-9]{12})}}
+        
+        let pattern = "\\{\\{CM_T:([a-f0-9]{12})\\}\\}"
+        guard let regex = try? Regex(pattern) else { return [] }
+        
+        let matches = content.matches(of: regex)
+        let ids = matches.compactMap { match -> String? in
+            if match.output.count > 1 {
+                let substring = match.output[1].substring
+                return String(substring ?? "")
+            }
+            return nil
+        }
+        return Array(Set(ids))
+    }
+    
     func replace(content: String, mapping: [String: String?]) async -> String {
         // Simple mock implementation that doesn't actually parse regex but serves testing needs if needed.
         // Or we can just return a pre-set value.

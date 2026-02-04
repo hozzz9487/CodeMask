@@ -236,36 +236,7 @@ final class AppStore {
                 }
                 
                 // 2. Scan (Pattern: {{CM_T:[a-f0-9]{12}}})
-                let pattern = "\\{\\{CM_T:([a-f0-9]{12})\\}\\}"
-                // We use standard regex here since RegexEngine abstraction is for masking/replacing rules.
-                // Or we can assume RegexEngine has a helper, but standard String regex is fine for this specific token extraction.
-                // HOWEVER, the AC says "Use RegexEngine to identify".
-                // Since RegexEngine doesn't have a "scanForTokens" method exposed in protocol (only mask/replace),
-                // we will extract manually or use replace directly if we trust it.
-                // The most robust way per AC "Scan: Use RegexEngine to identify" implies we should probably rely on `replace` to do the heavy lifting
-                // OR we just parse IDs to resolve them first.
-                // Let's iterate manually to find IDs for resolution.
-                
-                guard let regex = try? Regex(pattern) else {
-                    await self?.send(.clipboard(.restorationSequenceCompleted(.noTokensFound)))
-                    return
-                }
-                
-                let matches = content.matches(of: regex)
-                if matches.isEmpty {
-                    await self?.send(.clipboard(.restorationSequenceCompleted(.noTokensFound)))
-                    return
-                }
-                
-                // Extract unique IDs
-                let ids = Set(matches.compactMap { match -> String? in
-                    // Group 1 is the ID
-                    if match.output.count > 1 {
-                        let substring = match.output[1].substring
-                        return String(substring ?? "")
-                    }
-                    return nil
-                })
+                let ids = await environment.regexEngine.scanForTokenIDs(content)
                 
                 if ids.isEmpty {
                     await self?.send(.clipboard(.restorationSequenceCompleted(.noTokensFound)))
@@ -273,7 +244,7 @@ final class AppStore {
                 }
                 
                 // 3. Lookup
-                let mapping = await environment.session.resolve(tokens: Array(ids))
+                let mapping = await environment.session.resolve(tokens: ids)
                 
                 // 4. Reconstruct
                 let restoredContent = await environment.regexEngine.replace(content: content, mapping: mapping)

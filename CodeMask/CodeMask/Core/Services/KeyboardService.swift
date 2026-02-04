@@ -61,6 +61,6 @@ final class LiveKeyboardService: KeyboardServiceProtocol {
         cmdUp?.post(tap: .cgAnnotatedSessionEventTap)
         
         // Small delay to allow paste to register
-        try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
     }
 }
