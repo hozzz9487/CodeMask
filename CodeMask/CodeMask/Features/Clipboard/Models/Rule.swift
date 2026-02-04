@@ -34,9 +34,14 @@ extension Clipboard.Rule {
             ), // IPv4
             Clipboard.Rule(
                 id: UUID(),
-                pattern: "(?i)(api[_-]?key[\\s:=]{1,10})([A-Za-z0-9_\\-]{16,})|(?i)(secret[\\s:=]{1,10})([A-Za-z0-9_\\-]{16,})",
+                pattern: "\\b(?:sk-[a-zA-Z0-9]{20,})\\b",
                 isEnabled: true
-            ) // Generic Key (Detects label + value)
+            ), // OpenAI Keys (Direct match)
+            Clipboard.Rule(
+                id: UUID(),
+                pattern: "(?i)(api[_-]?key[\\s:=]{1,10})[\"']?([A-Za-z0-9_\\-]{16,})[\"']?|(?i)(secret[\\s:=]{1,10})[\"']?([A-Za-z0-9_\\-]{16,})[\"']?",
+                isEnabled: true
+            ) // Generic Key (Detects label + value, supports quotes)
         ]
     }
 }

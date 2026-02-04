@@ -209,10 +209,10 @@ final class AppStore {
                     environment.audio.playSystemSound(.tink)
                     send(.hud(.show(message: "Secured", type: .success)))
                 } else {
-                    // No secrets found
+                    // No secrets found - Code Review Fix: Use clearer feedback
                     environment.haptics.play(.generic)
                     environment.audio.playSystemSound(.tink)
-                    send(.hud(.show(message: "Secured", type: .success)))
+                    send(.hud(.show(message: "No Secrets", type: .neutral)))
                 }
                 
             case .failure:
@@ -270,10 +270,11 @@ final class AppStore {
                 // Restore Safety (runs regardless of cancellation during sleep)
                 await environment.pasteboard.setString(maskedContent)
                 
-                // Determine success/partial
-                let hasMissing = mapping.values.contains(where: { $0 == nil })
+                // Determine success/partial - Code Review Fix: 
+                // Check the actual restored string for error markers for 100% accuracy
+                let isPartial = restoredContent.contains(">>MISSING_SECRET<<")
                 
-                if hasMissing {
+                if isPartial {
                     await self?.send(.clipboard(.restorationSequenceCompleted(.partialSuccess)))
                 } else {
                     await self?.send(.clipboard(.restorationSequenceCompleted(.success)))
