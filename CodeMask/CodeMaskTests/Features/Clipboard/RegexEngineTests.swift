@@ -9,8 +9,8 @@ final class RegexEngineTests: XCTestCase {
     }
 
     func testUpdateRulesReturnsStatus() async {
-        let validRule = Clipboard.Rule(id: UUID(), pattern: "\\d+", isEnabled: true)
-        let invalidRule = Clipboard.Rule(id: UUID(), pattern: "[", isEnabled: true) // Invalid regex
+        let validRule = Clipboard.Rule(id: UUID(), name: "Valid", pattern: "\\d+", isEnabled: true)
+        let invalidRule = Clipboard.Rule(id: UUID(), name: "Invalid", pattern: "[", isEnabled: true) // Invalid regex
 
         let report = await sut.updateRules([validRule, invalidRule])
 
@@ -20,7 +20,7 @@ final class RegexEngineTests: XCTestCase {
     }
 
     func testBasicMasking() async {
-        let rule = Clipboard.Rule(pattern: "secret", isEnabled: true)
+        let rule = Clipboard.Rule(name: "Secret", pattern: "secret", isEnabled: true)
         _ = await sut.updateRules([rule])
 
         let input = "This is a secret message"
@@ -48,8 +48,8 @@ final class RegexEngineTests: XCTestCase {
 
     func testOverlapPriority_LongestWins() async {
         // "https://a.com" vs "a.com"
-        let ruleLong = Clipboard.Rule(pattern: "https://a\\.com", isEnabled: true)
-        let ruleShort = Clipboard.Rule(pattern: "a\\.com", isEnabled: true)
+        let ruleLong = Clipboard.Rule(name: "Long", pattern: "https://a\\.com", isEnabled: true)
+        let ruleShort = Clipboard.Rule(name: "Short", pattern: "a\\.com", isEnabled: true)
         
         _ = await sut.updateRules([ruleLong, ruleShort])
         
@@ -63,8 +63,8 @@ final class RegexEngineTests: XCTestCase {
     
     func testOverlapPriority_LeftMostWins() async {
         // "ABC" with rules "AB" and "BC" -> "AB" wins because it starts earlier
-        let ruleAB = Clipboard.Rule(pattern: "AB", isEnabled: true)
-        let ruleBC = Clipboard.Rule(pattern: "BC", isEnabled: true)
+        let ruleAB = Clipboard.Rule(name: "AB", pattern: "AB", isEnabled: true)
+        let ruleBC = Clipboard.Rule(name: "BC", pattern: "BC", isEnabled: true)
         
         _ = await sut.updateRules([ruleAB, ruleBC])
         
@@ -78,7 +78,7 @@ final class RegexEngineTests: XCTestCase {
     func testPerformanceStrict() async {
         // Generate 50 rules
         let rules = (0..<50).map {
-            Clipboard.Rule(pattern: "testpattern\($0)", isEnabled: true)
+            Clipboard.Rule(name: "PerfRule\($0)", pattern: "testpattern\($0)", isEnabled: true)
         }
         _ = await sut.updateRules(rules)
         

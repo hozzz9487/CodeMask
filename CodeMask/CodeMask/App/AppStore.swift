@@ -49,9 +49,22 @@ final class AppStore {
     init(environment: AppEnvironment) {
         self.environment = environment
         
-        // Initial Rule Load (Story 1.5 readiness)
+        // Initial Rule Load (Story 1.5 readiness + Story 1.7 Mobile Presets)
         Task {
-            _ = await environment.regexEngine.updateRules(Clipboard.Rule.defaults)
+            // Start with hardcoded defaults
+            var rules = Clipboard.Rule.defaults
+            
+            // Load Mobile Presets resource
+            do {
+                let mobileRules = try Clipboard.PresetLoader.loadMobilePresets()
+                rules.append(contentsOf: mobileRules)
+            } catch {
+                // Non-critical: Log error but continue with defaults
+                // In a real logger, we would log this. For now, we silently fail to defaults.
+                print("Failed to load Mobile Presets: \(error)")
+            }
+            
+            _ = await environment.regexEngine.updateRules(rules)
         }
     }
     

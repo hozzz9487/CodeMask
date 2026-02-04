@@ -1,6 +1,6 @@
 # Story 1.7: Mobile Presets & Advanced Regex
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,29 +22,29 @@ so that **I am protected out of the box without complex configuration**.
 
 ## Tasks / Subtasks
 
-- [ ] **Model Updates** (Critical Pre-requisites)
-  - [ ] Update `Clipboard.Rule` struct in `Features/Clipboard/Models/Rule.swift`:
-    - [ ] Add `Codable` conformance.
-    - [ ] Add `name: String` property (e.g., "iOS Bundle ID") to support named presets.
-    - [ ] Update `init` and `defaults` to include the new `name` field.
+- [x] **Model Updates** (Critical Pre-requisites)
+  - [x] Update `Clipboard.Rule` struct in `Features/Clipboard/Models/Rule.swift`:
+    - [x] Add `Codable` conformance.
+    - [x] Add `name: String` property (e.g., "iOS Bundle ID") to support named presets.
+    - [x] Update `init` and `defaults` to include the new `name` field.
 
-- [ ] **Data Resource Creation**
-  - [ ] Create directory `CodeMask/Resources/Presets/`.
-  - [ ] Create `MobilePack.json` containing the array of Rule objects.
-  - [ ] **Schema Requirements**: JSON must be an array of objects matching the updated `Rule` struct:
+- [x] **Data Resource Creation**
+  - [x] Create directory `CodeMask/Resources/Presets/`.
+  - [x] Create `MobilePack.json` containing the array of Rule objects.
+  - [x] **Schema Requirements**: JSON must be an array of objects matching the updated `Rule` struct:
     ```json
     [ { "id": "UUID-STRING", "name": "Pattern Name", "pattern": "REGEX", "isEnabled": true } ]
     ```
 
-- [ ] **Logic Implementation**
-  - [ ] Create `PresetLoader.swift` in `Features/Clipboard/Services/` (or `Utilities/`) to load `MobilePack.json` from the Main Bundle.
-  - [ ] Update `RegexEngine` (or the app startup flow) to load these presets and merge them with default rules.
-  - [ ] **Constraint**: Do NOT create `ProfileManager` yet (Epic 3). Keep logic self-contained within `Features/Clipboard`.
+- [x] **Logic Implementation**
+  - [x] Create `PresetLoader.swift` in `Features/Clipboard/Services/` (or `Utilities/`) to load `MobilePack.json` from the Main Bundle.
+  - [x] Update `RegexEngine` (or the app startup flow) to load these presets and merge them with default rules.
+  - [x] **Constraint**: Do NOT create `ProfileManager` yet (Epic 3). Keep logic self-contained within `Features/Clipboard`.
 
-- [ ] **Testing & Validation**
-  - [ ] Unit Test: Verify `Clipboard.Rule` encodes/decodes correctly.
-  - [ ] Integration Test: Ensure `MobilePack.json` is successfully loaded and parsed.
-  - [ ] Performance: Verify loading presets does not violate the <100ms startup budget.
+- [x] **Testing & Validation**
+  - [x] Unit Test: Verify `Clipboard.Rule` encodes/decodes correctly.
+  - [x] Integration Test: Ensure `MobilePack.json` is successfully loaded and parsed.
+  - [x] Performance: Verify loading presets does not violate the <100ms startup budget.
 
 ## Dev Notes
 
@@ -76,5 +76,23 @@ Gemini 2.0 Flash
 
 ### Completion Notes List
 
-- Created structure for Mobile Presets.
-- Identified critical regex patterns needed.
+- Implemented `Clipboard.Rule` updates (Codable, name).
+- Created `MobilePack.json` with 4 mobile development regex patterns.
+- Implemented `PresetLoader` to load patterns from Bundle.
+- Integrated loader into `AppStore` initialization.
+- Added comprehensive unit and integration tests.
+
+## File List
+
+- CodeMask/CodeMask/Features/Clipboard/Models/Rule.swift
+- CodeMask/CodeMaskTests/Features/Clipboard/Models/RuleTests.swift
+- CodeMask/CodeMaskTests/Features/Clipboard/RegexEngineTests.swift
+- CodeMask/CodeMask/Resources/Presets/MobilePack.json
+- CodeMask/CodeMask/Features/Clipboard/Services/PresetLoader.swift
+- CodeMask/CodeMaskTests/Features/Clipboard/Services/PresetLoaderTests.swift
+- CodeMask/CodeMask/App/AppStore.swift
+
+## Change Log
+
+- 2026-02-04: Implemented Story 1.7 (Mobile Presets). Added `MobilePack.json` and `PresetLoader`. Updated `Clipboard.Rule` to support names and Codable.
+
