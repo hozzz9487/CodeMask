@@ -233,6 +233,21 @@ So that I am protected out of the box without complex configuration.
 
 **Goal:** Provide the "Guardian" user with visual proof of security and background monitoring.
 
+**Recommended Implementation Order (Based on Story 2.0 Spike Findings):**
+
+1. **Story 2.0** - Technical Spikes & Research ✅ (Complete)
+2. **Story 2.1** - Menu Bar Status Icon (No dependencies, foundational UI)
+3. **Story 2.4** - Browser Context Detection (Standalone, spike-validated)
+4. **Story 2.3** - Guardian Mode (Depends on 2.4 for browser context awareness)
+5. **Story 2.5** - Browser Guard Alert (Depends on 2.3 + 2.4)
+6. **Story 2.2** - Dynamic Pill HUD (Depends on 2.5 for alert patterns, polish step)
+7. **Story 2.6** - Triple-Channel Feedback (Depends on 2.2, final polish)
+8. **Story 2.7** - Large Payload Bypass (Depends on 2.2 + 2.3)
+
+**Rationale:** Build browser detection first, then Guardian Mode monitoring, then alerts, then polish HUD and feedback systems.
+
+**Reference:** See `docs/research/epic-2-spikes.md` for detailed technical validation.
+
 ### Story 2.0: Technical Spikes & Research
  
  As a developer,
@@ -286,15 +301,20 @@ So that I know the action succeeded without having to check the clipboard conten
 
 As a user,
 I want the app to passively monitor my clipboard in the background,
-So that it knows when I have copied sensitive data even if I didn't use the masking shortcut.
+So that it knows when I have copied sensitive data and can proactively protect me from accidental exposure.
 
 **Acceptance Criteria:**
 
 **Given** "Guardian Mode" is enabled in settings
-**When** the system clipboard content changes
-**Then** the background monitor should detect the change via `NSPasteboard.changeCount`
+**When** the system clipboard content changes (detected via `NSPasteboard.changeCount`)
+**Then** the background monitor should detect the change within 500ms
 **And** it should scan the content against active regex rules using <1% CPU
-**And** it should update the internal state to "Danger" if unmasked secrets are found.
+**And** it should update the internal state to "Danger" if unmasked secrets are found
+**And** it should mark clipboard data with transient marker (`org.nspasteboard.TransientType`) to reduce persistence in clipboard managers.
+
+**Note:** macOS does not provide APIs to detect external clipboard *reads*. Guardian Mode provides proactive protection by monitoring clipboard *writes* and context switching (see Story 2.4/2.5).
+
+**Technical Reference:** See `docs/research/epic-2-spikes.md` (Story 2.0) for clipboard security research findings, transient marker validation, and changeCount polling pattern.
 
 ### Story 2.4: Browser Context Detection
 
@@ -310,6 +330,8 @@ So that I can determine if a security warning is necessary.
 **And** identify if it is a known browser (Chrome, Safari, Firefox, Arc, etc.)
 **And** this check must be lightweight and privacy-preserving.
 
+**Technical Reference:** See `docs/research/epic-2-spikes.md` (Story 2.0) for NSWorkspace API validation, Bundle ID verification, and latency characteristics.
+
 ### Story 2.5: Browser Guard & Alert HUD
 
 As a "Guardian" user,
@@ -323,6 +345,8 @@ So that I can prevent accidental data leaks to web-based AI tools.
 **Then** a Red "Danger" HUD should appear immediately
 **And** it should warn "Unmasked Secrets Detected"
 **And** the Menu Bar icon should switch to the Warning state.
+
+**Technical Reference:** See `docs/research/epic-2-spikes.md` (Story 2.0) for browser detection latency validation and recommended response time budget.
 
 ### Story 2.6: Triple-Channel Feedback (Audio & Haptic)
 

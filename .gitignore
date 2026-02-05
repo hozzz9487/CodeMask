@@ -36,6 +36,9 @@ Icon?
 *.log
 *.tmp
 
+# Research spikes and prototype code
+Spikes/
+
 # --- Gemini ---
 # Temporary execution files, history, and logs
 .gemini/tmp/
