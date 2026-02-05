@@ -233,7 +233,25 @@ So that I am protected out of the box without complex configuration.
 
 **Goal:** Provide the "Guardian" user with visual proof of security and background monitoring.
 
-### Story 2.1: Menu Bar Status Icon
+### Story 2.0: Technical Spikes & Research
+ 
+ As a developer,
+ I want to validate critical technical assumptions before implementation,
+ So that I don't build features based on incorrect system behavior understandings.
+ 
+ **Acceptance Criteria:**
+ 
+ **Given** the "Browser Detection" requirement (Story 2.4/2.5)
+ **When** I run the Spike
+ **Then** I must confirm `NSWorkspace` can detect the active browser window with <50ms latency
+ **And** verify if explicit `Privacy Usage Descriptions` are required for this API.
+ 
+ **Given** the "Clipboard Race Condition" risk (Story 2.3)
+ **When** I conduct the research
+ **Then** I must identify if macOS allows detecting external clipboard reads (Anti-Spyware)
+ **And** document findings to inform the "Guardian Mode" implementation strategy.
+ 
+ ### Story 2.1: Menu Bar Status Icon
 
 As a user,
 I want to know the security status of my session at a glance,
