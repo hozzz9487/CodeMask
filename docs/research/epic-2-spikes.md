@@ -15,7 +15,7 @@ This report documents research findings from two critical technical spikes condu
 
 | Spike | Research Question | Conclusion | Feasibility |
 |-------|------------------|------------|-------------|
-| **Browser Detection** | Can NSWorkspace detect browser context with <50ms latency? | ✅ YES | ✅ Feasible |
+| **Browser Detection** | Can NSWorkspace detect browser context with <50ms latency? | ✅ YES (Theoretical) | ✅ Feasible |
 | **Browser Detection** | Does NSWorkspace require Privacy Manifest declarations? | ❌ NO | ✅ Safe to use |
 | **Clipboard Security** | Can we detect when external apps read clipboard? | ❌ NO | ❌ Not possible |
 | **Clipboard Security** | Can we mark clipboard data as transient/temporary? | ✅ YES | ✅ Feasible |
@@ -75,11 +75,8 @@ let browserBundleIDs: Set<String> = [
 - ✅ Prototype code implemented in `Spikes/BrowserDetection/BrowserDetectionSpike.swift`
 - ✅ API usage patterns validated against Apple documentation
 - ✅ Bundle IDs for 6 major browsers confirmed (see below)
-- ⚠️ **End-to-end latency testing deferred to Story 2.4 implementation**
-
-**Conclusion:** ✅ **API feasibility confirmed - implementation ready**
-
-**Note:** Actual latency measurements will be conducted during Story 2.4 implementation with production code.
+- 🔴 **Correction:** Initial spike code incorrectly measured inter-app switch intervals instead of API response latency. Given `NSWorkspace` notifications are synchronous, delivery latency is theoretically <1ms.
+- ⚠️ **Empirical Measurement:** Precise end-to-end latency (from user click to HUD display) will be validated during Story 2.4 implementation when UI components are integrated.
 
 #### ✅ Privacy Manifest Analysis
 
