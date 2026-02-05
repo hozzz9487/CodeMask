@@ -4,23 +4,9 @@ import XCTest
 final class PresetLoaderTests: XCTestCase {
     
     func testLoadMobilePresets_FromDisk() throws {
-        // Locate the JSON file relative to this test file
-        // Path: CodeMaskTests/Features/Clipboard/Services/PresetLoaderTests.swift
-        let currentFileURL = URL(fileURLWithPath: #file)
-        let projectRoot = currentFileURL
-            .deletingLastPathComponent() // Services
-            .deletingLastPathComponent() // Clipboard
-            .deletingLastPathComponent() // Features
-            .deletingLastPathComponent() // CodeMaskTests
-            .deletingLastPathComponent() // CodeMask (Project Root)
+        // Verify file exists
+        let jsonURL = TestUtils.mobilePackURL
         
-        let jsonURL = projectRoot
-            .appendingPathComponent("CodeMask")
-            .appendingPathComponent("Resources")
-            .appendingPathComponent("Presets")
-            .appendingPathComponent("MobilePack.json")
-        
-        // Verify file exists first
         guard FileManager.default.fileExists(atPath: jsonURL.path) else {
             XCTFail("MobilePack.json not found at \(jsonURL.path)")
             return

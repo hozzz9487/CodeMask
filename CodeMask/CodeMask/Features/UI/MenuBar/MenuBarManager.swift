@@ -48,7 +48,7 @@ final class MenuBarManager: NSObject {
         
         if let button = statusItem.button {
             // Default "Safe" icon (SFSymbol)
-            // Use system symbols: lock.shield (safe), lock.shield.warning (danger), etc.
+            // Use system symbols: lock.shield.fill (safe), exclamationmark.shield.fill (danger), etc.
             button.image = NSImage(systemSymbolName: Strings.lockShieldIconDescription, accessibilityDescription: Strings.safeStatusIconDescription)
             button.action = #selector(menuBarClicked)
             button.target = self
@@ -91,7 +91,7 @@ final class MenuBarManager: NSObject {
     func updateIcon() {
         guard let button = statusItem.button else { return }
         
-        let symbolName = store.isSafe ? "lock.shield.fill" : "lock.shield.warning"
+        let symbolName = store.isSafe ? "lock.shield.fill" : "exclamationmark.shield.fill"
         // Use Warning symbol for unsafe state
         
         let config = NSImage.SymbolConfiguration(paletteColors: [store.isSafe ? .systemBlue : .systemOrange])

@@ -26,19 +26,22 @@ final class HUDManager {
         
         // Better: Use Task to observe changes if using Swift 6, or just bridge it.
         Task {
+            var lastState: HUD.State? = nil
+            
             while true {
-                let isVisible = store.hud.isVisible
-                let message = store.hud.message
-                let type = store.hud.type
+                let currentState = store.hud
                 
-                if isVisible {
-                    showHUD(message: message, type: type)
-                } else {
-                    hideHUD()
+                if currentState != lastState {
+                    if currentState.isVisible {
+                        showHUD(message: currentState.message, type: currentState.type)
+                    } else {
+                        hideHUD()
+                    }
+                    lastState = currentState
                 }
                 
-                // Wait for next change (this is a simplified observation for the bridge)
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms poll is fine for HUD
+                // 100ms poll is fine for responsiveness, but now it's "silent" if no change
+                try? await Task.sleep(nanoseconds: 100_000_000)
             }
         }
     }
@@ -51,14 +54,18 @@ final class HUDManager {
         guard let window = window else { return }
         
         // Update content
-        window.contentView = NSHostingView(rootView: HUDView(message: message, type: type))
+        let hostingView = NSHostingView(rootView: HUDView(message: message, type: type))
+        window.contentView = hostingView
+        
+        // Dynamic Resizing: Adjust window size to fit content
+        let fittingSize = hostingView.fittingSize
+        window.setContentSize(fittingSize)
         
         // Position in center of screen with active mouse
         if let screen = NSScreen.main {
             let screenRect = screen.visibleFrame
-            let windowSize = window.frame.size
-            let x = screenRect.origin.x + (screenRect.width - windowSize.width) / 2
-            let y = screenRect.origin.y + (screenRect.height - windowSize.height) / 2
+            let x = screenRect.origin.x + (screenRect.width - fittingSize.width) / 2
+            let y = screenRect.origin.y + (screenRect.height - fittingSize.height) / 2
             window.setFrameOrigin(NSPoint(x: x, y: y))
         }
         

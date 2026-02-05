@@ -59,9 +59,13 @@ final class AppStore {
                 let mobileRules = try Clipboard.PresetLoader.loadMobilePresets()
                 rules.append(contentsOf: mobileRules)
             } catch {
-                // Non-critical: Log error but continue with defaults
-                // In a real logger, we would log this. For now, we silently fail to defaults.
+                // Non-critical but observable failure
                 print("Failed to load Mobile Presets: \(error)")
+                
+                // Dispatch error to UI/State so it isn't silent
+                // Must ensure self is available; Task captures self strongly if not careful, 
+                // but here we are inside init -> Task. 
+                await self.send(.security(.didEncounterError(.invalidConfiguration("Mobile Presets Failed: \(error.localizedDescription)"))))
             }
             
             _ = await environment.regexEngine.updateRules(rules)

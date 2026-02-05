@@ -81,6 +81,8 @@ Gemini 2.0 Flash
 - Implemented `PresetLoader` to load patterns from Bundle.
 - Integrated loader into `AppStore` initialization.
 - Added comprehensive unit and integration tests.
+- Refactored test path logic into reusable `TestUtils`.
+- Improved error handling in `AppStore` for preset loading failures.
 
 ## File List
 
@@ -91,6 +93,8 @@ Gemini 2.0 Flash
 - CodeMask/CodeMask/Features/Clipboard/Services/PresetLoader.swift
 - CodeMask/CodeMaskTests/Features/Clipboard/Services/PresetLoaderTests.swift
 - CodeMask/CodeMask/App/AppStore.swift
+- CodeMask/CodeMaskTests/TestUtils.swift
+
 
 ## Change Log
 

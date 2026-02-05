@@ -14,6 +14,8 @@ struct HUDView: View {
             Text(message)
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundColor(.white)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 16)

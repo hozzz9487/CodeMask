@@ -8,7 +8,7 @@ enum HUD {
         var message: String = ""
         var type: FeedbackType = .neutral
         
-        enum FeedbackType {
+        enum FeedbackType: Equatable {
             case neutral
             case success
             case error

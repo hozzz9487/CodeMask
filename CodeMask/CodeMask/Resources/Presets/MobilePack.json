@@ -2,19 +2,19 @@
   {
     "id": "123e4567-e89b-12d3-a456-426614174001",
     "name": "iOS Bundle ID",
-    "pattern": "\\bcom\\.[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+\\b",
+    "pattern": "\\b(?!com\\.apple\\.product-type\\.)(?:com|net|org|io|gov|edu|me)\\.[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+\\b",
     "isEnabled": true
   },
   {
     "id": "123e4567-e89b-12d3-a456-426614174002",
     "name": "Apple Team ID",
-    "pattern": "\\b[A-Z0-9]{10}\\b",
+    "pattern": "\\b(?=[A-Z0-9]*[A-Z])[A-Z0-9]{10}\\b",
     "isEnabled": true
   },
   {
     "id": "123e4567-e89b-12d3-a456-426614174003",
     "name": "Android Keystore Passwords",
-    "pattern": "(?i)(storePassword|keyPassword)[\\s:=]{1,10}\\S+",
+    "pattern": "(?i)(?:storePassword|keyPassword)[\\s:=]{1,10}(\\S+)",
     "isEnabled": true
   },
   {

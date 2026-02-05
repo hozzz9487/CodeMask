@@ -42,20 +42,7 @@ final class RuleTests: XCTestCase {
         }
     }
     func testMobilePackJSONIsValid() throws {
-        // Locate the JSON file relative to this test file
-        let currentFileURL = URL(fileURLWithPath: #file)
-        let projectRoot = currentFileURL
-            .deletingLastPathComponent() // Models
-            .deletingLastPathComponent() // Clipboard
-            .deletingLastPathComponent() // Features
-            .deletingLastPathComponent() // CodeMaskTests
-            .deletingLastPathComponent() // CodeMask (Project Root)
-        
-        let jsonURL = projectRoot
-            .appendingPathComponent("CodeMask")
-            .appendingPathComponent("Resources")
-            .appendingPathComponent("Presets")
-            .appendingPathComponent("MobilePack.json")
+        let jsonURL = TestUtils.mobilePackURL
         
         // Verify file exists
         XCTAssertTrue(FileManager.default.fileExists(atPath: jsonURL.path), "MobilePack.json should exist at \(jsonURL.path)")
