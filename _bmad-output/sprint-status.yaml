@@ -51,7 +51,7 @@ development_status:
   epic-1-retrospective: done
 
   epic-2: in-progress
-  2-0-technical-spikes: review
+  2-0-technical-spikes: done
   2-1-menu-bar-status-icon: backlog
   2-2-dynamic-pill-hud-success-feedback: backlog
   2-3-guardian-mode-passive-clipboard-monitor: backlog
