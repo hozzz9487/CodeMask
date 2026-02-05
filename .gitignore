@@ -53,3 +53,13 @@ _bmad-output/tmp/
 .env
 *.pem
 *.p12
+
+# --- Codex ---
+.codex/auth.json
+.codex/history.jsonl
+.codex/models_cache.json
+.codex/sessions/
+.codex/tmp/
+.codex/log/
+.codex/.personality_migration
+.codex/config.toml
