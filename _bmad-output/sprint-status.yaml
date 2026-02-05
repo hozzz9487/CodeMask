@@ -50,8 +50,8 @@ development_status:
   1-7-mobile-presets-advanced-regex: done
   epic-1-retrospective: done
 
-  epic-2: backlog
-   2-0-technical-spikes: backlog
+  epic-2: in-progress
+    2-0-technical-spikes: ready-for-dev
   2-1-menu-bar-status-icon: backlog
   2-2-dynamic-pill-hud-success-feedback: backlog
   2-3-guardian-mode-passive-clipboard-monitor: backlog
