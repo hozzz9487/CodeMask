@@ -17,5 +17,6 @@ extension AppStore {
             isInputMonitoringGranted: inputMonitoring
         )
         self.security.permissions = newState
+        self.session.isStatusKnown = accessibility && inputMonitoring
     }
 }

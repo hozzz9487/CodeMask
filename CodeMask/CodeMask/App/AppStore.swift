@@ -35,6 +35,7 @@ final class AppStore {
     
     // Computed props for convenience
     var isSafe: Bool { security.permissions.isAccessibilityGranted && security.permissions.isInputMonitoringGranted }
+    var securityStatus: Session.SecurityStatus { session.securityStatus }
     
     // Combine bridge for non-SwiftUI observers (e.g. AppDelegate, MenuBarManager)
     // Using @ObservationIgnored to prevent observation loops if these were used in reducers
@@ -48,6 +49,7 @@ final class AppStore {
     
     init(environment: AppEnvironment) {
         self.environment = environment
+        session.isStatusKnown = isSafe
         
         // Initial Rule Load (Story 1.5 readiness + Story 1.7 Mobile Presets)
         Task {
@@ -107,6 +109,9 @@ final class AppStore {
             // Transient data, not stored in state
             break
             
+        case .didUpdateDanger(let isDanger):
+            session.isDanger = isDanger
+            
         case .didFail(let error):
             security.lastError = error
             errorSubject.send(error)
@@ -146,6 +151,8 @@ final class AppStore {
                 if previousPermissionState != newState {
                     security.permissions = newState
                     previousPermissionState = newState
+                    
+                    session.isStatusKnown = accessibility && inputMonitoring
                     
                     // Notify subscribers only on actual changes
                     isSafeSubject.send(isSafe)
@@ -221,6 +228,7 @@ final class AppStore {
             case .success(let masked):
                 // Feedback
                 if masked {
+                    session.hasSecrets = true
                     // Success with masking
                     environment.haptics.play(.generic)
                     environment.audio.playSystemSound(.tink)

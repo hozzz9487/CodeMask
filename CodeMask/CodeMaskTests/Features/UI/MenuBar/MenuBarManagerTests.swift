@@ -30,11 +30,14 @@ final class MenuBarManagerTests: XCTestCase {
     func testIconUpdate_Idle() {
         // Given
         appStore.session.hasSecrets = false
+        appStore.session.isStatusKnown = true
         
         // When
         manager.updateIcon(for: .idle)
         
-        // Then (Verification via logic since NSStatusItem is hard to inspect in unit tests without extensive mocking)
+        // Then
+        let idle = manager.iconConfiguration(for: .idle)
+        XCTAssertEqual(idle.2, "CodeMask: Safe")
     }
     
     func testIconConfigurationMapping() {
@@ -50,5 +53,11 @@ final class MenuBarManagerTests: XCTestCase {
         let warning = manager.iconConfiguration(for: .warning)
         XCTAssertEqual(warning.0, "exclamationmark.shield.fill")
         XCTAssertEqual(warning.1, .systemRed)
+        XCTAssertEqual(warning.2, "CodeMask: Warning")
+        
+        let unknown = manager.iconConfiguration(for: .unknown)
+        XCTAssertEqual(unknown.0, "questionmark.shield")
+        XCTAssertEqual(unknown.1, .systemGray)
+        XCTAssertEqual(unknown.2, "CodeMask: Status Unknown")
     }
 }

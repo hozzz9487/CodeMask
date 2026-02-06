@@ -42,5 +42,22 @@ final class SessionStateTests: XCTestCase {
         XCTAssertEqual(state.securityStatus, .secured)
     }
     
-    // Future test for Warning state
+    func testComputedSecurityStatus_Warning() {
+        // Given
+        var state = Session.State()
+        state.hasSecrets = true
+        state.isDanger = true
+        
+        // Then
+        XCTAssertEqual(state.securityStatus, .warning)
+    }
+    
+    func testComputedSecurityStatus_Unknown() {
+        // Given
+        var state = Session.State()
+        state.isStatusKnown = false
+        
+        // Then
+        XCTAssertEqual(state.securityStatus, .unknown)
+    }
 }

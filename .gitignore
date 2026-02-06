@@ -48,3 +48,8 @@ GEMINI.md
 *.gemini
 .github/agents/
 logs_*/
+
+# --- Specialized Tools ---
+.env
+*.pem
+*.p12

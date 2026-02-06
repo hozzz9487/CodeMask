@@ -37,7 +37,8 @@ final class MenuBarManager: NSObject {
         statusItem.button?.imagePosition = .imageLeft
         
         // Initial state
-        updateIcon(for: .idle)
+        currentStatus = appStore.securityStatus
+        updateIcon(for: currentStatus)
     }
     
     private func setupSubscriptions() {
@@ -47,7 +48,7 @@ final class MenuBarManager: NSObject {
     private func startObservation() {
         withObservationTracking {
             // Access properties to track
-            _ = appStore.session.securityStatus
+            _ = appStore.securityStatus
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
@@ -59,7 +60,7 @@ final class MenuBarManager: NSObject {
     }
     
     private func handleStateChange() {
-        let newStatus = appStore.session.securityStatus
+        let newStatus = appStore.securityStatus
         
         // Simple debounce/guard
         guard newStatus != currentStatus else { return }
@@ -79,13 +80,13 @@ final class MenuBarManager: NSObject {
         
         let (symbolName, color, label) = iconConfiguration(for: status)
         
-        // Create configuration
-        let config = NSImage.SymbolConfiguration(paletteColors: [color])
-        
+        // Template image + tint keeps system appearance consistent
         if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: label) {
-            button.image = image.withSymbolConfiguration(config)
+            image.isTemplate = true
+            button.image = image
         }
         
+        button.contentTintColor = color
         button.setAccessibilityLabel(label)
         button.toolTip = label
     }
@@ -105,7 +106,7 @@ final class MenuBarManager: NSObject {
     
     private func triggerWarningFlash() {
         // Simple 3-pulse flash
-        Task {
+        Task { @MainActor in
             for _ in 0..<3 {
                 // Dim/Hide
                 statusItem.button?.alphaValue = 0.3

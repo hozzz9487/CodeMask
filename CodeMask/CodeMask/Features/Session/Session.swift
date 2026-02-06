@@ -15,11 +15,22 @@ enum Session {
     struct State: Equatable {
         var sessionID: UUID?
         var hasSecrets: Bool = false
+        var isDanger: Bool = false
+        var isStatusKnown: Bool = true
         
         var securityStatus: SecurityStatus {
+            if !isStatusKnown {
+                return .unknown
+            }
+            
+            if isDanger {
+                return .warning
+            }
+            
             if hasSecrets {
                 return .secured
             }
+            
             return .idle
         }
     }
@@ -27,6 +38,7 @@ enum Session {
     enum Action: Equatable {
         case didSecureData(token: UUID)
         case didRetrieveData(content: String?)
+        case didUpdateDanger(isDanger: Bool)
         case didFail(AppError)
     }
 }

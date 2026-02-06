@@ -1,6 +1,6 @@
 # Story 2.1: Menu Bar Status Icon
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -37,7 +37,7 @@ so that I can verify if I have sensitive data stored in memory or if there are p
 - **State Derivation**: `SecurityStatus` must be derived in `AppState` / reducer layer (single source of truth). `MenuBarManager` only renders and must not contain business logic.
 - **State Observation**: The Menu Bar component (e.g., `MenuBarManager`) must observe `AppStore.state` (specifically a computed `securityStatus` property).
 - **Unidirectional Flow**: The Menu Bar is a **View** (projection of state). It must **NOT** contain business logic. It simply reflects the current store state.
-- **Namespace**: Ensure code resides in `CodeMask/Features/UI/Menu Bar/`.
+- **Namespace**: Ensure code resides in `CodeMask/Features/UI/MenuBar/`.
 
 ### UI/UX Specifications
 - **Iconography (SF Symbols)**:
@@ -109,11 +109,17 @@ so that I can verify if I have sensitive data stored in memory or if there are p
 - Integrated `MenuBarManager` into `CodeMaskApp` and `AppDelegate`.
 - Added unit tests for `MenuBarManager` logic and `Session.State` derivation.
 - Verified all new and existing unit tests pass.
+- Code review fix: derive `securityStatus` with Unknown/Danger support and wire permission awareness.
+- Code review fix: update menu bar rendering to use template + `contentTintColor` and ensure MainActor flashing.
+- Code review fix: expand tests for warning/unknown state mapping and labels.
+- Tests run: `xcodebuild -project CodeMask/CodeMask.xcodeproj -scheme CodeMask -destination 'platform=macOS' test`.
 
 ### File List
 
+- CodeMask/CodeMask/App/AppStore.swift
 - CodeMask/CodeMask/Features/Session/Session.swift
 - CodeMask/CodeMask/Features/UI/MenuBar/MenuBarManager.swift
 - CodeMask/CodeMask/App/CodeMaskApp.swift
 - CodeMask/CodeMaskTests/Features/UI/MenuBar/MenuBarManagerTests.swift
 - CodeMask/CodeMaskTests/Features/Session/SessionStateTests.swift
+- CodeMask/CodeMaskTests/Helpers/AppStore+Tests.swift
