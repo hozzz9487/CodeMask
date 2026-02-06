@@ -1,6 +1,6 @@
 # Story 2.1: Menu Bar Status Icon
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -51,26 +51,26 @@ so that I can verify if I have sensitive data stored in memory or if there are p
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Define Security State API**
-  - [ ] Update `AppState` (or `Session.State`) to expose a clear `SecurityStatus` enum (`.idle`, `.secured`, `.warning`).
-  - [ ] Add computed properties or selectors to derive this state from `SessionMap.isEmpty` and future `Guardian.status`.
+- [x] **Task 1: Define Security State API**
+  - [x] Update `AppState` (or `Session.State`) to expose a clear `SecurityStatus` enum (`.idle`, `.secured`, `.warning`).
+  - [x] Add computed properties or selectors to derive this state from `SessionMap.isEmpty` and future `Guardian.status`.
 
-- [ ] **Task 2: Implement MenuBarManager**
-  - [ ] Create `class MenuBarManager` (or `Controller`) that initializes `NSStatusBar.system.statusItem`.
-  - [ ] Implement the `updateIcon(for status: SecurityStatus)` logic.
-  - [ ] ensure precise SF Symbol rendering with correct tint colors using `NSImage.symbolConfiguration`.
-  - [ ] Implement a brief Warning flash (e.g., 2-3 pulses, ~150ms each) without infinite animation.
-  - [ ] Avoid redundant updates if status is unchanged (simple guard or debounce).
+- [x] **Task 2: Implement MenuBarManager**
+  - [x] Create `class MenuBarManager` (or `Controller`) that initializes `NSStatusBar.system.statusItem`.
+  - [x] Implement the `updateIcon(for status: SecurityStatus)` logic.
+  - [x] ensure precise SF Symbol rendering with correct tint colors using `NSImage.symbolConfiguration`.
+  - [x] Implement a brief Warning flash (e.g., 2-3 pulses, ~150ms each) without infinite animation.
+  - [x] Avoid redundant updates if status is unchanged (simple guard or debounce).
 
-- [ ] **Task 3: Connect to AppStore**
-  - [ ] Subscribe `MenuBarManager` to `AppStore` state changes.
-  - [ ] Verify state-to-icon updates are driven solely by the store.
+- [x] **Task 3: Connect to AppStore**
+  - [x] Subscribe `MenuBarManager` to `AppStore` state changes.
+  - [x] Verify state-to-icon updates are driven solely by the store.
 
-- [ ] **Task 4: Unit Testing**
-  - [ ] Write logic tests (if logic exists in a ViewModel/Presenter).
-  - [ ] Verify `SecurityStatus` derivation logic (e.g., "If map has items -> Secured").
-  - [ ] Add unit tests for icon mapping (status -> symbol + tint).
-  - [ ] Consider protocol-wrapping `NSStatusItem` for testability.
+- [x] **Task 4: Unit Testing**
+  - [x] Write logic tests (if logic exists in a ViewModel/Presenter).
+  - [x] Verify `SecurityStatus` derivation logic (e.g., "If map has items -> Secured").
+  - [x] Add unit tests for icon mapping (status -> symbol + tint).
+  - [x] Consider protocol-wrapping `NSStatusItem` for testability.
 
 ## Dev Notes
 
@@ -102,4 +102,18 @@ so that I can verify if I have sensitive data stored in memory or if there are p
 
 ### Completion Notes List
 
+- Implemented `Session.SecurityStatus` enum and `securityStatus` computed property.
+- Created `MenuBarManager` using AppKit `NSStatusBar`.
+- Implemented icon updates based on security status using SF Symbols.
+- Added `triggerWarningFlash` for visual feedback in warning state.
+- Integrated `MenuBarManager` into `CodeMaskApp` and `AppDelegate`.
+- Added unit tests for `MenuBarManager` logic and `Session.State` derivation.
+- Verified all new and existing unit tests pass.
+
 ### File List
+
+- CodeMask/CodeMask/Features/Session/Session.swift
+- CodeMask/CodeMask/Features/UI/MenuBar/MenuBarManager.swift
+- CodeMask/CodeMask/App/CodeMaskApp.swift
+- CodeMask/CodeMaskTests/Features/UI/MenuBar/MenuBarManagerTests.swift
+- CodeMask/CodeMaskTests/Features/Session/SessionStateTests.swift

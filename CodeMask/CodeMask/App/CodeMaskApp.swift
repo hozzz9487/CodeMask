@@ -45,7 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize Menu Bar Manager
-        menuBarManager = MenuBarManager(store: AppStore.shared)
+        menuBarManager = MenuBarManager(appStore: AppStore.shared)
         
         // Initialize HUD Manager
         hudManager = HUDManager(store: AppStore.shared)

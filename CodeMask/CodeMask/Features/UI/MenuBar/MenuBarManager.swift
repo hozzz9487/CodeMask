@@ -2,106 +2,119 @@
 //  MenuBarManager.swift
 //  CodeMask
 //
-//  Created by Edison on 2026/1/5.
+//  Created by BMad Dev Agent on 2026/02/05.
 //
 
 import AppKit
-import SwiftUI
-import os
 import Combine
+import SwiftUI
 
+/// Manages the application's menu bar status item.
+/// Reflects the current security status via icon and color.
 @MainActor
 final class MenuBarManager: NSObject {
-    private var statusItem: NSStatusItem!
-    private let store: AppStore
-    private let logger = Logger(subsystem: "com.edsncfw.CodeMask", category: "MenuBarManager")
-    private var cancellables = Set<AnyCancellable>()
     
-    init(store: AppStore) {
-        self.store = store
+    // MARK: - Properties
+    
+    private var statusItem: NSStatusItem!
+    private var cancellables = Set<AnyCancellable>()
+    private let appStore: AppStore
+    
+    // Debounce for updates
+    private var currentStatus: Session.SecurityStatus = .idle
+    
+    // MARK: - Initialization
+    
+    init(appStore: AppStore) {
+        self.appStore = appStore
         super.init()
         setupStatusItem()
-        startObservation()
-    }
-    
-    private func startObservation() {
-        // Observe permission changes and update icon immediately
-        store.permissionChangedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.updateIcon()
-            }
-            .store(in: &cancellables)
-        
-        // Also observe isSafe state changes to ensure icon updates
-        // This catches edge cases where permissionChangedPublisher might be missed
-        store.isSafePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateIcon()
-            }
-            .store(in: &cancellables)
+        setupSubscriptions()
     }
     
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem.button?.imagePosition = .imageLeft
         
-        if let button = statusItem.button {
-            // Default "Safe" icon (SFSymbol)
-            // Use system symbols: lock.shield.fill (safe), exclamationmark.shield.fill (danger), etc.
-            button.image = NSImage(systemSymbolName: Strings.lockShieldIconDescription, accessibilityDescription: Strings.safeStatusIconDescription)
-            button.action = #selector(menuBarClicked)
-            button.target = self
-        }
-        
-        updateIcon()
+        // Initial state
+        updateIcon(for: .idle)
     }
     
-    @objc private func menuBarClicked() {
-        // Future: Toggle popover or show menu
-        logger.debug("Menu bar clicked")
-        
-        // Simple menu for scaffolding
-        let menu = NSMenu()
-        let statusTitle = store.isSafe ? Strings.statusSafe : Strings.statusUnsafe
-        menu.addItem(NSMenuItem(title: "\(Strings.menuItemCodeMaskPrefix) \(statusTitle)", action: nil, keyEquivalent: ""))
-        
-        if !store.isSafe {
-            menu.addItem(NSMenuItem.separator())
-            let prefsItem = NSMenuItem(title: Strings.menuItemOpenSystemPreferences, action: #selector(openSystemPreferences), keyEquivalent: ",")
-            prefsItem.target = self
-            menu.addItem(prefsItem)
-        }
-        
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: Strings.menuItemQuit, action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-        
-        statusItem.menu = menu
-        statusItem.button?.performClick(nil) // Show the menu immediately
-        // Note: Keep menu assigned; it will be automatically cleared when user clicks elsewhere or menu closes
+    private func setupSubscriptions() {
+        startObservation()
     }
     
-    @objc private func openSystemPreferences() {
-        // Open Security & Privacy settings
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
+    private func startObservation() {
+        withObservationTracking {
+            // Access properties to track
+            _ = appStore.session.securityStatus
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.handleStateChange()
+                // Re-register observation
+                self.startObservation()
+            }
         }
     }
     
-    func updateIcon() {
+    private func handleStateChange() {
+        let newStatus = appStore.session.securityStatus
+        
+        // Simple debounce/guard
+        guard newStatus != currentStatus else { return }
+        currentStatus = newStatus
+        
+        updateIcon(for: newStatus)
+        
+        if newStatus == .warning {
+            triggerWarningFlash()
+        }
+    }
+    
+    // MARK: - UI Updates
+    
+    func updateIcon(for status: Session.SecurityStatus) {
         guard let button = statusItem.button else { return }
         
-        let symbolName = store.isSafe ? "lock.shield.fill" : "exclamationmark.shield.fill"
-        // Use Warning symbol for unsafe state
+        let (symbolName, color, label) = iconConfiguration(for: status)
         
-        let config = NSImage.SymbolConfiguration(paletteColors: [store.isSafe ? .systemBlue : .systemOrange])
+        // Create configuration
+        let config = NSImage.SymbolConfiguration(paletteColors: [color])
         
-        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?.withSymbolConfiguration(config) {
-            button.image = image
-        } else {
-            // Fallback for missing symbol and log failure
-            logger.error("Failed to load symbol: \(symbolName)")
-            button.title = "CM"
+        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: label) {
+            button.image = image.withSymbolConfiguration(config)
+        }
+        
+        button.setAccessibilityLabel(label)
+        button.toolTip = label
+    }
+    
+    func iconConfiguration(for status: Session.SecurityStatus) -> (String, NSColor, String) {
+        switch status {
+        case .idle:
+            return ("shield", .systemGray, "CodeMask: Safe")
+        case .secured:
+            return ("lock.shield.fill", .systemBlue, "CodeMask: Secured")
+        case .warning:
+            return ("exclamationmark.shield.fill", .systemRed, "CodeMask: Warning")
+        case .unknown:
+            return ("questionmark.shield", .systemGray, "CodeMask: Status Unknown")
+        }
+    }
+    
+    private func triggerWarningFlash() {
+        // Simple 3-pulse flash
+        Task {
+            for _ in 0..<3 {
+                // Dim/Hide
+                statusItem.button?.alphaValue = 0.3
+                try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
+                
+                // Restore
+                statusItem.button?.alphaValue = 1.0
+                try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
+            }
         }
     }
 }
