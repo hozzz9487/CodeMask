@@ -43,7 +43,7 @@ graph TD
     User[使用者操作] -->|Action| Store
     Clipboard[剪貼簿監控] -->|Action| Store
     Store -->|State Update| View[SwiftUI/AppKit 視圖]
-    Store -->|Async Request| Actor[SessionActor (安全記憶體)]
+    Store -->|Async Request| Actor["SessionActor (安全記憶體)"]
     Actor -->|Result| Store
 ```
 

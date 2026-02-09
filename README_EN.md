@@ -43,7 +43,7 @@ graph TD
     User[User Interaction] -->|Action| Store
     Clipboard[Clipboard Monitor] -->|Action| Store
     Store -->|State Update| View[SwiftUI/AppKit Views]
-    Store -->|Async Request| Actor[SessionActor (Secure Memory)]
+    Store -->|Async Request| Actor["SessionActor (Secure Memory)"]
     Actor -->|Result| Store
 ```
 
