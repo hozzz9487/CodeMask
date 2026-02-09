@@ -23,4 +23,5 @@ jobs:
           -project CodeMask/CodeMask.xcodeproj \
           -scheme CodeMask \
           -destination 'platform=macOS' \
-          -enableCodeCoverage YES
+          -enableCodeCoverage YES \
+          CODE_SIGNING_ALLOWED=NO
