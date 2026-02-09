@@ -579,3 +579,21 @@ So that I can start using it with confidence.
 **Then** it should provide a "Try it now" text box
 **And** it should prompt me to use `Cmd+Opt+C` and `Cmd+Opt+V` to see the masking/restoration in action
 **And** upon successful test, it should show a "You're all set!" message and move to the Menu Bar.
+
+## Epic 6: Documentation & Visual Assets
+
+**Goal:** Professionalize the repository with high-quality visual documentation to demonstrate the application's unique value proposition.
+
+### Story 6.1: High-Quality Visual Showcase
+
+As a visitor to the repository,
+I want to see the tool in action via GIFs and screenshots,
+So that I can quickly understand how it improves my security workflow without installing it first.
+
+**Acceptance Criteria:**
+
+**Given** the application is fully functional
+**When** I visit the README
+**Then** I should see a Hero GIF demonstrating the full Mask -> AI -> Restore loop
+**And** I should see high-quality screenshots of the Menu Bar status and HUD "pills"
+**And** all assets must be optimized for fast web loading and stored in `/assets`.
