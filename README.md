@@ -26,6 +26,17 @@
 -   **守護者模式 (Guardian Mode):** 輕量級背景監控，使用 Conflated Tasks 高效輪詢剪貼簿變更，避免 CPU 資源浪費。
 -   **開發者友善:** 針對速度優化 (<100ms 延遲)，支援全域快捷鍵 (Global Hotkeys) 的鍵盤優先操作。
 
+## 🛡️ 安全性 (Security)
+
+本專案極度重視安全性。如果您發現任何安全漏洞，請參閱 [SECURITY.md](SECURITY.md) 以了解私下回報的流程。請**不要**直接開啟公開的 Issue 回報安全問題。
+
+## 🤝 參與貢獻 (Contributing)
+
+我們歡迎社群參與！在提交 Pull Request 之前，請確保：
+1. 代碼遵循 [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/)。
+2. 已新增或更新對應的單元測試。
+3. CI/CD 檢查全部通過。
+
 ## 🛠 技術棧 (Tech Stack)
 
 -   **語言:** Swift 5.9+ (啟用 Swift 6.2 Strict Concurrency 模式)

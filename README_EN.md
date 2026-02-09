@@ -26,6 +26,17 @@ This project demonstrates advanced macOS development capabilities, including low
 -   **"Guardian Mode":** A lightweight background monitor that polls clipboard changes efficiently using conflated tasks to prevent CPU spikes.
 -   **Developer-Centric:** Optimized for speed (<100ms latency) and keyboard-first workflows via Global Hotkeys.
 
+## 🛡️ Security
+
+Security is a top priority for this project. If you discover a vulnerability, please refer to [SECURITY_EN.md](SECURITY_EN.md) for our disclosure policy. Please **do not** open a public issue for security-related reports.
+
+## 🤝 Contributing
+
+Contributions are welcome! Before submitting a Pull Request, please ensure:
+1. Your code follows the [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/).
+2. You have added or updated unit tests for your changes.
+3. All CI/CD checks are passing.
+
 ## 🛠 Tech Stack
 
 -   **Language:** Swift 5.9+ (Swift 6.2 Strict Concurrency mode)
