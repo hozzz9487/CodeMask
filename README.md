@@ -32,10 +32,11 @@
 
 ## 🤝 參與貢獻 (Contributing)
 
-我們歡迎社群參與！在提交 Pull Request 之前，請確保：
-1. 代碼遵循 [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/)。
-2. 已新增或更新對應的單元測試。
-3. CI/CD 檢查全部通過。
+我們歡迎社群參與！為了維持 `prod` 分支的穩定性，所有變更都必須遵循以下流程：
+1. Fork 此儲存庫並從 `prod` 分支建立您的特性分支 (Feature Branch)。
+2. 提交變更並確保遵循 [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/)。
+3. 開啟指向 `prod` 的 **Pull Request**。
+4. 確保所有 **CI/CD 檢查 (Build and Test)** 均已通過。
 
 ## 🛠 技術棧 (Tech Stack)
 

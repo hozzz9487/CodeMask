@@ -32,10 +32,11 @@ Security is a top priority for this project. If you discover a vulnerability, pl
 
 ## 🤝 Contributing
 
-Contributions are welcome! Before submitting a Pull Request, please ensure:
-1. Your code follows the [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/).
-2. You have added or updated unit tests for your changes.
-3. All CI/CD checks are passing.
+Contributions are welcome! To maintain the stability of the `prod` branch, all changes must follow this workflow:
+1. Fork the repository and create your feature branch from `prod`.
+2. Commit your changes ensuring adherence to the [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/).
+3. Open a **Pull Request** targeting the `prod` branch.
+4. Ensure all **CI/CD checks (Build and Test)** are passing.
 
 ## 🛠 Tech Stack
 

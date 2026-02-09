@@ -16,7 +16,7 @@ Security updates are currently provided only for the latest code on the `prod` b
 ## Reporting a Vulnerability
 If you discover a security vulnerability, please **do not** open a public GitHub Issue.
 
-Instead, please use the GitHub **[Private Vulnerability Reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability-to-a-repository-maintainer)** feature:
+Instead, please use the GitHub **[Private Vulnerability Reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)** feature:
 1. Navigate to the **Security** tab of this repository.
 2. Click on **Advisories** -> **Report a vulnerability**.
 
