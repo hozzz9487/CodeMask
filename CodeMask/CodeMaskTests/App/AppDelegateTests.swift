@@ -169,22 +169,3 @@ final class AppDelegateTests: XCTestCase {
 }
 
 // MARK: - Mock Objects for Testing
-
-/// Mock PermissionsManager for testing without system dependencies
-class MockPermissionsManager: PermissionsManagerProtocol {
-    var checkAccessibilityReturnValue = false
-    var checkInputMonitoringReturnValue = false
-    var promptAccessibilityCalled = false
-    
-    func checkAccessibility() -> Bool {
-        return checkAccessibilityReturnValue
-    }
-    
-    func checkInputMonitoring() -> Bool {
-        return checkInputMonitoringReturnValue
-    }
-    
-    func promptAccessibility() {
-        promptAccessibilityCalled = true
-    }
-}

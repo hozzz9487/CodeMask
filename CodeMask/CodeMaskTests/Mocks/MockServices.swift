@@ -222,19 +222,37 @@ final class MockHotkeyService: HotkeyServiceProtocol, @unchecked Sendable {
 
 final class MockPermissionsManager: PermissionsManagerProtocol, @unchecked Sendable {
     private let lock = NSLock()
-    var mockAccessibilityStatus = true
     
-    func checkAccessibilityPermissions(prompt: Bool) -> Bool {
-        return mockAccessibilityStatus
+    private var _checkAccessibilityReturnValue = false
+    private var _checkInputMonitoringReturnValue = false
+    private var _promptAccessibilityCalled = false
+    
+    var checkAccessibilityReturnValue: Bool {
+        get { lock.withLock { _checkAccessibilityReturnValue } }
+        set { lock.withLock { _checkAccessibilityReturnValue = newValue } }
     }
     
-    func openAccessibilitySettings() {
-        // No-op
+    var checkInputMonitoringReturnValue: Bool {
+        get { lock.withLock { _checkInputMonitoringReturnValue } }
+        set { lock.withLock { _checkInputMonitoringReturnValue = newValue } }
     }
     
-    func checkAccessibility() -> Bool { return true }
-    func checkInputMonitoring() -> Bool { return true }
-    func promptAccessibility() { }
+    var promptAccessibilityCalled: Bool {
+        get { lock.withLock { _promptAccessibilityCalled } }
+        set { lock.withLock { _promptAccessibilityCalled = newValue } }
+    }
+    
+    func checkAccessibility() -> Bool {
+        return checkAccessibilityReturnValue
+    }
+    
+    func checkInputMonitoring() -> Bool {
+        return checkInputMonitoringReturnValue
+    }
+    
+    func promptAccessibility() {
+        promptAccessibilityCalled = true
+    }
 }
 
 // MARK: - Mock Keyboard
