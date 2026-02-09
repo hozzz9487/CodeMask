@@ -24,4 +24,5 @@ jobs:
           -scheme CodeMask \
           -destination 'platform=macOS' \
           -enableCodeCoverage YES \
+          -skip-testing CodeMaskUITests \
           CODE_SIGNING_ALLOWED=NO

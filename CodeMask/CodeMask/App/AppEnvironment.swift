@@ -21,7 +21,10 @@ struct AppEnvironment {
     var regexEngine: Clipboard.RegexEngineProtocol
     var keyboard: KeyboardServiceProtocol
     
-    // var clipboardMonitor: ClipboardMonitorProtocol
+    /// Returns true if the application is currently running within a testing environment (XCTest).
+    static var isRunningUnitTests: Bool {
+        return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
     
     init(
         permissionsManager: PermissionsManagerProtocol = PermissionsManager(),

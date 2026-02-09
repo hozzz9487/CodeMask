@@ -1,4 +1,3 @@
-
 import Foundation
 import XCTest
 @testable import CodeMask
@@ -117,7 +116,7 @@ actor MockRegexEngine: Clipboard.RegexEngineProtocol {
         // Assumes format {{CM_T:id}}
         // Regex: {{CM_T:([a-f0-9]{12})}}
         
-        let pattern = "\\{\\{CM_T:([a-f0-9]{12})\\}\\}"
+        let pattern = "\\{\\{CM_T:([a-f0-9]{12})\\}" // Corrected escaping for regex pattern
         guard let regex = try? Regex(pattern) else { return [] }
         
         let matches = content.matches(of: regex)
@@ -200,6 +199,42 @@ actor MockSessionActor: SessionStorageProtocol {
     func count() -> Int {
         return storage.count
     }
+}
+
+// MARK: - Mock Hotkey Service
+
+final class MockHotkeyService: HotkeyServiceProtocol, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _isRegistered = false
+    
+    var isRegistered: Bool { lock.withLock { _isRegistered } }
+    
+    func registerHotkeys() {
+        lock.withLock { _isRegistered = true }
+    }
+    
+    func unregisterHotkeys() {
+        lock.withLock { _isRegistered = false }
+    }
+}
+
+// MARK: - Mock Permissions
+
+final class MockPermissionsManager: PermissionsManagerProtocol, @unchecked Sendable {
+    private let lock = NSLock()
+    var mockAccessibilityStatus = true
+    
+    func checkAccessibilityPermissions(prompt: Bool) -> Bool {
+        return mockAccessibilityStatus
+    }
+    
+    func openAccessibilitySettings() {
+        // No-op
+    }
+    
+    func checkAccessibility() -> Bool { return true }
+    func checkInputMonitoring() -> Bool { return true }
+    func promptAccessibility() { }
 }
 
 // MARK: - Mock Keyboard

@@ -11,9 +11,22 @@ import XCTest
 @MainActor
 final class HUDRaceConditionTests: XCTestCase {
     
+    private func createMockEnvironment() -> AppEnvironment {
+        return AppEnvironment(
+            permissionsManager: MockPermissionsManager(),
+            hotkeyManager: MockHotkeyService(),
+            session: MockSessionActor(),
+            pasteboard: MockPasteboardService(),
+            haptics: MockHapticService(),
+            audio: MockAudioService(),
+            regexEngine: MockRegexEngine(),
+            keyboard: MockKeyboardService()
+        )
+    }
+    
     func testHUD_MultipleShowCalls_CancelsAutoHideCorrectly() async throws {
         // GIVEN: Fresh AppStore with mock environment
-        let store = AppStore(environment: AppEnvironment())
+        let store = AppStore(environment: createMockEnvironment())
         
         // WHEN: Show HUD first time
         store.send(.hud(.show(message: "First", type: .success)))
@@ -45,7 +58,7 @@ final class HUDRaceConditionTests: XCTestCase {
     
     func testHUD_TripleShowCalls_OnlyLastTimerExecutes() async throws {
         // GIVEN: Fresh AppStore
-        let store = AppStore(environment: AppEnvironment())
+        let store = AppStore(environment: createMockEnvironment())
         
         // WHEN: Rapid triple show
         store.send(.hud(.show(message: "A", type: .success)))

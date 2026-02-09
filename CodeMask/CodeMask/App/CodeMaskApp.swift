@@ -44,6 +44,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @MainActor
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Skip initialization logic if running unit tests to prevent UI blocking and system permission prompts in CI
+        if AppEnvironment.isRunningUnitTests {
+            logger.info("Unit test environment detected. Skipping normal app initialization.")
+            return
+        }
+
         // Initialize Menu Bar Manager
         menuBarManager = MenuBarManager(store: AppStore.shared)
         
