@@ -5,6 +5,9 @@
 > **專為開發工作流設計的原生 macOS 機密資料防護工具。**  
 > 採用 Swift 6.2 (Strict Concurrency)、零依賴架構與自定義單向資料流 (Unidirectional Data Flow) 打造。
 
+![CI Status](https://github.com/hozzz9487/CodeMask/actions/workflows/test.yml/badge.svg?branch=prod)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ---
 
 ## 📖 專案概述

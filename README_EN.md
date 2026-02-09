@@ -5,6 +5,9 @@
 > **A native macOS utility for securing sensitive data during development workflows.**  
 > Built with Swift 6.2 (Strict Concurrency), Zero Dependencies, and a custom Unidirectional Data Flow architecture.
 
+![CI Status](https://github.com/hozzz9487/CodeMask/actions/workflows/test.yml/badge.svg?branch=prod)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ---
 
 ## 📖 Overview
