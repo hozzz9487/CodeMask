@@ -3,8 +3,14 @@ name: CodeMask CI
 on:
   push:
     branches: [ "main", "prod" ]
+    paths:
+      - 'CodeMask/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ "main", "prod" ]
+    paths:
+      - 'CodeMask/**'
+      - '.github/workflows/**'
 
 jobs:
   test:

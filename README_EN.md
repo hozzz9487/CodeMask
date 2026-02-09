@@ -1,4 +1,4 @@
-# CodeMask 🛡️
+# CodeMask
 
 [繁體中文](README.md) | **English**
 
@@ -87,6 +87,15 @@ The project includes a comprehensive suite of unit tests using XCTest and mock s
 # Run tests via command line
 xcodebuild -project CodeMask/CodeMask.xcodeproj -scheme CodeMask test
 ```
+
+## 🗺️ Roadmap
+
+The core security engine and basic UI are complete. Future development plans include:
+
+- [ ] **Visual Showcase Update**: Record and upload high-quality GIFs demonstrating the automatic masking, HUD alerts, and secure restoration workflow.
+- [ ] **Project Profiles**: Support for different regex rulesets tailored to specific clients or projects.
+- [ ] **Local Security Audit Log**: A local-only history of triggered rules (without exposing sensitive content).
+- [ ] **Advanced Browser Guardian**: Active HUD warnings when switching to a browser while unmasked secrets are in the clipboard.
 
 ## 📜 License
 
