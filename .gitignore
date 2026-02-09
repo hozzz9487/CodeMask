@@ -7,7 +7,7 @@ DerivedData/
 *.moved-aside
 *.xcuserstate
 
-## User-specific files (Important to keep clean for multiple collaborators)
+## User-specific files
 xcuserdata/
 *.xcuserdatad
 *.xccheckout
@@ -35,31 +35,14 @@ Icon?
 # Local logs or debug files
 *.log
 *.tmp
-
-# Research spikes and prototype code
 Spikes/
 
-# --- Gemini ---
-# Temporary execution files, history, and logs
-.gemini/tmp/
-.gemini/logs/
-.gemini/history/
-
-# BMad temporary outputs or non-essential artifacts ---
-_bmad/tmp/
-_bmad-output/tmp/
-
-# --- Specialized Tools ---
-.env
-*.pem
-*.p12
-
-# --- Codex ---
-.codex/auth.json
-.codex/history.jsonl
-.codex/models_cache.json
-.codex/sessions/
-.codex/tmp/
-.codex/log/
-.codex/.personality_migration
-.codex/config.toml
+# --- AI & Automation Tools (Hidden) ---
+# Hide BMad agent configuration and logs
+_bmad/
+_bmad-output/
+.agent/
+.codex/
+.gemini/
+GEMINI.md
+*.gemini
