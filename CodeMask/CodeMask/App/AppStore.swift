@@ -7,11 +7,14 @@
 
 import SwiftUI
 import Combine
+import os
 
 // MARK: - Global State
 @MainActor
 @Observable
 final class AppStore {
+    private let logger = Logger(subsystem: "com.hozzz.CodeMask", category: "AppStore")
+    
     // Single instance for the application
     static let shared = AppStore(environment: AppEnvironment())
     
@@ -60,7 +63,7 @@ final class AppStore {
                 rules.append(contentsOf: mobileRules)
             } catch {
                 // Non-critical but observable failure
-                print("Failed to load Mobile Presets: \(error)")
+                logger.error("Failed to load Mobile Presets: \(error.localizedDescription)")
                 
                 // Dispatch error to UI/State so it isn't silent
                 // Must ensure self is available; Task captures self strongly if not careful, 

@@ -27,7 +27,7 @@ extension Clipboard {
             do {
                 self.tokenRegex = try Regex(pattern)
             } catch {
-                print("Critical: Failed to compile token regex: \(error)")
+                logger.critical("Failed to compile token regex: \(error.localizedDescription)")
                 self.tokenRegex = nil
             }
         }

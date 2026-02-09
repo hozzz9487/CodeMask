@@ -1,10 +1,12 @@
 import Foundation
 import Darwin
+import os
 
 /// A secure memory buffer that locks data in RAM to prevent swapping to disk.
 /// This class manages its own memory lifecycle using `posix_memalign`, `mlock`, and `memset`.
 final class SecureBuffer {
     
+    private static let logger = Logger(subsystem: "com.hozzz.CodeMask", category: "Security")
     private let pointer: UnsafeMutableRawPointer
     private let allocationSize: Int
     
@@ -64,7 +66,7 @@ final class SecureBuffer {
             } else {
                 // In a security context, failure to lock is a vulnerability.
                 // We log a high-visibility warning.
-                print("SecureBuffer [CRITICAL]: mlock failed with error \(err). Sensitive data may swap to disk.")
+                Self.logger.critical("mlock failed with error \(err). Sensitive data may swap to disk.")
             }
         }
     }
