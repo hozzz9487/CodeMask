@@ -21,7 +21,7 @@ This project demonstrates advanced macOS development capabilities, including low
 -   **Native Performance:** Written in **Swift 6.2** with **Strict Concurrency** enabled.
 -   **Unidirectional Data Flow:** A custom-built, Redux-like state management system ensuring thread safety across the Menu Bar, HUD, and background monitors.
 -   **"Guardian Mode":** A lightweight background monitor that polls clipboard changes efficiently using conflated tasks to prevent CPU spikes.
--   **Developer Centric:** optimized for speed (<100ms latency) and keyboard-first workflows via Global Hotkeys.
+-   **Developer-Centric:** Optimized for speed (<100ms latency) and keyboard-first workflows via Global Hotkeys.
 
 ## 🛠 Tech Stack
 
@@ -90,4 +90,4 @@ xcodebuild -project CodeMask/CodeMask.xcodeproj -scheme CodeMask test
 This project is licensed under the MIT License.
 
 ---
-*Created by [Your Name]. Targeted for high-security, performance-critical macOS environments.*
+*Created by Edison Chang. Targeted for high-security, performance-critical macOS environments.*
