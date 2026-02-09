@@ -90,4 +90,4 @@ xcodebuild -project CodeMask/CodeMask.xcodeproj -scheme CodeMask test
 This project is licensed under the MIT License.
 
 ---
-*Created by Edison Chang. Targeted for high-security, performance-critical macOS environments.*
+*Created by [hozzz9487](https://github.com/hozzz9487). Targeted for high-security, performance-critical macOS environments.*

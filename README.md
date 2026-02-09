@@ -90,4 +90,4 @@ xcodebuild -project CodeMask/CodeMask.xcodeproj -scheme CodeMask test
 本專案採用 MIT 授權條款。
 
 ---
-*由 Edison Chang 開發。專為高安全性、極致效能的 macOS 環境打造。*
+*由 [hozzz9487](https://github.com/hozzz9487) 開發。專為高安全性、極致效能的 macOS 環境打造。*
