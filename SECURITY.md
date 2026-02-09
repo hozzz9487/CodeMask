@@ -16,7 +16,7 @@ CodeMask 是一個安全優先的工具，旨在展示 macOS 底層記憶體管�
 ## 如何回報漏洞
 如果您發現安全性問題，請**不要**使用公開的 GitHub Issue。
 
-建議使用 GitHub 內建的 **[Private Vulnerability Reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability-to-a-repository-maintainer)** 功能：
+請使用 GitHub 內建的 **[Private Vulnerability Reporting](https://docs.github.com/zh/code-security/how-tos/report-and-fix-vulnerabilities/report-a-vulnerability/privately-reporting-a-security-vulnerability)** 功能：
 1. 導覽至此儲存庫的 **Security** 標籤頁。
 2. 點擊 **Advisories** -> **Report a vulnerability**。
 
