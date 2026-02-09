@@ -46,3 +46,4 @@ _bmad-output/
 .gemini/
 GEMINI.md
 *.gemini
+.github/agents/
