@@ -78,15 +78,27 @@ final class MenuBarManager: NSObject {
     func updateIcon(for status: Session.SecurityStatus) {
         guard let button = statusItem.button else { return }
         
-        let (symbolName, color, label) = iconConfiguration(for: status)
+        let (symbolName, _, label) = iconConfiguration(for: status)
         
-        // Template image + tint keeps system appearance consistent
-        if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: label) {
-            image.isTemplate = true
-            button.image = image
+        switch status {
+        case .secured, .warning:
+            // 彩色狀態：使用 paletteColors 強制白色前景 + 彩色背景
+            let (_, color, _) = iconConfiguration(for: status)
+            let config = NSImage.SymbolConfiguration(paletteColors: [.white, color])
+                .applying(NSImage.SymbolConfiguration(pointSize: 0, weight: .medium))
+            if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: label) {
+                button.image = image.withSymbolConfiguration(config)
+            }
+            
+        case .idle, .unknown:
+            // 灰色狀態：使用 Template Image，讓 macOS 自動處理對比度
+            // 這是選單列圖標的標準做法，在任何螢幕（含非焦點螢幕）都能保持清晰
+            if let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: label) {
+                image.isTemplate = true
+                button.image = image
+            }
         }
         
-        button.contentTintColor = color
         button.setAccessibilityLabel(label)
         button.toolTip = label
     }
@@ -94,13 +106,15 @@ final class MenuBarManager: NSObject {
     func iconConfiguration(for status: Session.SecurityStatus) -> (String, NSColor, String) {
         switch status {
         case .idle:
-            return ("shield", .systemGray, "CodeMask: Safe")
+            // 使用 secondaryLabelColor 替代 systemGray，在系統暗淡模式下更清晰
+            return ("shield", .secondaryLabelColor, "CodeMask: Safe")
         case .secured:
             return ("lock.shield.fill", .systemBlue, "CodeMask: Secured")
         case .warning:
             return ("exclamationmark.shield.fill", .systemRed, "CodeMask: Warning")
         case .unknown:
-            return ("questionmark.shield", .systemGray, "CodeMask: Status Unknown")
+            // 增加粗度，並確保使用 secondaryLabelColor
+            return ("shield.slash", .secondaryLabelColor, "CodeMask: Status Unknown")
         }
     }
     
