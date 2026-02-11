@@ -61,7 +61,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Only show error alert on permission state CHANGES, not every check
         AppStore.shared.permissionChangedPublisher
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.handlePermissionStateChange()
             }
@@ -160,6 +159,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @MainActor
     private func showPermissionAlert() {
+        if AppStore.shared.environment.shouldSuppressAlerts {
+            logger.info("Suppressed Permission Alert (Testing Mode)")
+            return
+        }
+        
         let alert = NSAlert()
         alert.messageText = Strings.permissionAlertTitle
         alert.informativeText = Strings.permissionAlertMessage
@@ -182,6 +186,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @MainActor
     private func showRestartAlert() {
+        if AppStore.shared.environment.shouldSuppressAlerts {
+            logger.info("Suppressed Restart Alert (Testing Mode)")
+            return
+        }
+        
         let alert = NSAlert()
         alert.messageText = Strings.restartAlertTitle
         alert.informativeText = Strings.restartAlertMessage
@@ -229,7 +238,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AppStore.shared.send(.security(.permissions(.didCheckStatus(accessibility: isAx, inputMonitoring: isInput))))
         
         // Only prompt for accessibility if not granted AND we haven't shown alert yet
-        if !isAx && !hasShownInitialPermissionAlert {
+        if !isAx && !hasShownInitialPermissionAlert && !AppStore.shared.environment.shouldSuppressAlerts {
             permissions.promptAccessibility()
         }
     }

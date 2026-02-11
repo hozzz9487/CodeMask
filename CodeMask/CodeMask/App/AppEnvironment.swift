@@ -26,6 +26,11 @@ struct AppEnvironment {
         return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
     
+    // Testing & UI suppression
+    var shouldSuppressAlerts: Bool
+    
+    // var clipboardMonitor: ClipboardMonitorProtocol
+    
     init(
         permissionsManager: PermissionsManagerProtocol = PermissionsManager(),
         hotkeyManager: HotkeyServiceProtocol = GlobalHotkeyManager(),
@@ -34,7 +39,8 @@ struct AppEnvironment {
         haptics: HapticServiceProtocol = LiveHapticService(),
         audio: AudioServiceProtocol = LiveAudioService(),
         regexEngine: Clipboard.RegexEngineProtocol = Clipboard.RegexEngine(),
-        keyboard: KeyboardServiceProtocol = LiveKeyboardService()
+        keyboard: KeyboardServiceProtocol = LiveKeyboardService(),
+        shouldSuppressAlerts: Bool = ProcessInfo.processInfo.arguments.contains("-suppress-alerts") || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     ) {
         self.permissionsManager = permissionsManager
         self.hotkeyManager = hotkeyManager
@@ -44,5 +50,6 @@ struct AppEnvironment {
         self.audio = audio
         self.regexEngine = regexEngine
         self.keyboard = keyboard
+        self.shouldSuppressAlerts = shouldSuppressAlerts
     }
 }

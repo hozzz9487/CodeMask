@@ -99,6 +99,19 @@ final class AppStore {
         }
     }
     
+    /// Reset the store to initial state (Testing only)
+    @MainActor
+    func reset() {
+        self.environment = AppEnvironment()
+        self.security = Security.State()
+        self.hotkeys = Hotkeys.State()
+        self.session = Session.State()
+        self.clipboard = Clipboard.State()
+        self.hud = HUD.State()
+        self.previousPermissionState = nil
+        // Note: subjects don't need reset as they are Passthrough
+    }
+    
     // MARK: - Reducers
     private func reduce(session action: Session.Action) {
         switch action {

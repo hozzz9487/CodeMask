@@ -17,6 +17,14 @@ final class CodeMaskUITests: XCTestCase {
 
         // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
     }
+    
+    @MainActor
+    private func launchApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments.append("-suppress-alerts")
+        app.launch()
+        return app
+    }
 
     override func tearDownWithError() throws {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
@@ -25,8 +33,7 @@ final class CodeMaskUITests: XCTestCase {
     @MainActor
     func testExample() throws {
         // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
+        let app = launchApp()
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
@@ -36,7 +43,7 @@ final class CodeMaskUITests: XCTestCase {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.
             measure(metrics: [XCTApplicationLaunchMetric()]) {
-                XCUIApplication().launch()
+                _ = launchApp()
             }
         }
     }
