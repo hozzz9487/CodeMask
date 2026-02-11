@@ -45,7 +45,7 @@ final class SecureBuffer {
         memset(self.pointer, 0, self.allocationSize)
         
         // 2. Copy string bytes to the secure buffer
-        string.withCString { cString in
+        _ = string.withCString { cString in
             // We copy the bytes including the null terminator implicitly if we use strcpy,
             // or explicit memcpy.
             // string.utf8 does not include null.

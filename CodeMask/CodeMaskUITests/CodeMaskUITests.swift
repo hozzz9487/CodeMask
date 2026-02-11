@@ -33,7 +33,7 @@ final class CodeMaskUITests: XCTestCase {
     @MainActor
     func testExample() throws {
         // UI tests must launch the application that they test.
-        let app = launchApp()
+        _ = launchApp()
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
