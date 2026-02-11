@@ -35,6 +35,7 @@ final class AppStore {
     
     // Computed props for convenience
     var isSafe: Bool { security.permissions.isAccessibilityGranted && security.permissions.isInputMonitoringGranted }
+    var securityStatus: Session.SecurityStatus { session.securityStatus }
     
     // Combine bridge for non-SwiftUI observers (e.g. AppDelegate, MenuBarManager)
     // Using @ObservationIgnored to prevent observation loops if these were used in reducers
@@ -48,6 +49,7 @@ final class AppStore {
     
     init(environment: AppEnvironment) {
         self.environment = environment
+        session.isStatusKnown = isSafe
         
         // Initial Rule Load (Story 1.5 readiness + Story 1.7 Mobile Presets)
         Task {
@@ -65,7 +67,7 @@ final class AppStore {
                 // Dispatch error to UI/State so it isn't silent
                 // Must ensure self is available; Task captures self strongly if not careful, 
                 // but here we are inside init -> Task. 
-                await self.send(.security(.didEncounterError(.invalidConfiguration("Mobile Presets Failed: \(error.localizedDescription)"))))
+                self.send(.security(.didEncounterError(.invalidConfiguration("Mobile Presets Failed: \(error.localizedDescription)"))))
             }
             
             _ = await environment.regexEngine.updateRules(rules)
@@ -97,6 +99,19 @@ final class AppStore {
         }
     }
     
+    /// Reset the store to initial state (Testing only)
+    @MainActor
+    func reset() {
+        self.environment = AppEnvironment()
+        self.security = Security.State()
+        self.hotkeys = Hotkeys.State()
+        self.session = Session.State()
+        self.clipboard = Clipboard.State()
+        self.hud = HUD.State()
+        self.previousPermissionState = nil
+        // Note: subjects don't need reset as they are Passthrough
+    }
+    
     // MARK: - Reducers
     private func reduce(session action: Session.Action) {
         switch action {
@@ -106,6 +121,9 @@ final class AppStore {
         case .didRetrieveData:
             // Transient data, not stored in state
             break
+            
+        case .didUpdateDanger(let isDanger):
+            session.isDanger = isDanger
             
         case .didFail(let error):
             security.lastError = error
@@ -146,6 +164,8 @@ final class AppStore {
                 if previousPermissionState != newState {
                     security.permissions = newState
                     previousPermissionState = newState
+                    
+                    session.isStatusKnown = accessibility && inputMonitoring
                     
                     // Notify subscribers only on actual changes
                     isSafeSubject.send(isSafe)
@@ -221,6 +241,7 @@ final class AppStore {
             case .success(let masked):
                 // Feedback
                 if masked {
+                    session.hasSecrets = true
                     // Success with masking
                     environment.haptics.play(.generic)
                     environment.audio.playSystemSound(.tink)

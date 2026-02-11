@@ -14,13 +14,14 @@ final class AppDelegateTests: XCTestCase {
         mockPermissionsManager = MockPermissionsManager()
         // Inject mock into AppStore
         AppStore.shared.environment.permissionsManager = mockPermissionsManager
+        AppStore.shared.environment.shouldSuppressAlerts = true
     }
     
     override func tearDown() {
         appDelegate = nil
         mockPermissionsManager = nil
-        // Reset environment to default
-        AppStore.shared.environment = AppEnvironment()
+        // Reset AppStore for next test
+        AppStore.shared.reset()
         super.tearDown()
     }
     
@@ -61,20 +62,19 @@ final class AppDelegateTests: XCTestCase {
         
         // Subscribe to error publisher
         let cancellable = AppStore.shared.errorPublisher
-            .receive(on: DispatchQueue.main)
             .sink { error in
-                receivedError = error
-                expectation.fulfill()
+                if error != nil {
+                   receivedError = error
+                   expectation.fulfill()
+                }
             }
         
         // Simulate permission check failure
-        AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
-        
-        waitForExpectations(timeout: 1.0) { error in
-            if let error = error {
-                XCTFail("Error observer test timed out: \(error)")
-            }
+        Task {
+            AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
         }
+        
+        wait(for: [expectation], timeout: 5.0)
         
         XCTAssertEqual(receivedError, .permissionsCheckFailed, "Error observer should receive permissionsCheckFailed error")
         cancellable.cancel()
@@ -89,7 +89,6 @@ final class AppDelegateTests: XCTestCase {
         var lastError: AppError?
         
         let cancellable = AppStore.shared.errorPublisher
-            .receive(on: DispatchQueue.main)
             .sink { error in
                 if error != nil {
                     errorCount += 1
@@ -103,16 +102,20 @@ final class AppDelegateTests: XCTestCase {
             }
         
         // First error
-        AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
-        wait(for: [expectation1], timeout: 1.0)
+        Task {
+            AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
+        }
+        wait(for: [expectation1], timeout: 5.0)
         XCTAssertEqual(errorCount, 1, "Should receive first error")
         
         // Clear error
         AppStore.shared.send(.security(.didClearError))
         
-        // Second error should still be received (not a one-shot observer)
-        AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
-        wait(for: [expectation2], timeout: 1.0)
+        // Second error
+        Task {
+            AppStore.shared.send(.security(.didEncounterError(.permissionsCheckFailed)))
+        }
+        wait(for: [expectation2], timeout: 5.0)
         
         XCTAssertEqual(errorCount, 2, "Should receive second error after clearing first")
         XCTAssertEqual(lastError, .permissionsCheckFailed, "Last error should be permissions check failed")

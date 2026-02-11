@@ -2,6 +2,8 @@
 import AppKit
 import os
 
+extension NSSound: @unchecked @retroactive Sendable {}
+
 enum SystemSound: Sendable {
     case tink
     case alert
