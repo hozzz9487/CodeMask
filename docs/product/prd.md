@@ -279,3 +279,7 @@ CodeMask is a native macOS application designed for system-wide clipboard interc
 ### Usability
 *   **U1 (Native DX)**: Adherence to macOS Human Interface Guidelines (HIG) for all UI elements (Menu Bar, HUD, Overlays).
 *   **U2 (Accessibility)**: Clear onboarding flow and visual guidance for granting necessary macOS system permissions.
+### Documentation & Polish
+
+- **Visual Assets:** The repository must include high-quality visual assets (GIFs, Screenshots) in `/assets` to clearly demonstrate the Masking/Restoration workflow as per Epic 6.
+- **User Guide:** Clear onboarding documentation must be provided in the README.
