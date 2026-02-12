@@ -3,18 +3,41 @@ name: CodeMask CI
 on:
   push:
     branches: [ "main", "prod" ]
-    paths:
-      - 'CodeMask/**'
-      - '.github/workflows/**'
   pull_request:
     branches: [ "main", "prod" ]
-    paths:
-      - 'CodeMask/**'
-      - '.github/workflows/**'
 
 jobs:
+  check-changes:
+    name: Check for Code Changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_test: ${{ steps.filter.outputs.should_test }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        run: |
+          #檢查是否有 CodeMask 目錄或工作流檔案的變動
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(CodeMask/|.github/workflows/)'; then
+            echo "should_test=true" >> $GITHUB_OUTPUT
+          else
+            #對於 Pull Request，檢查與 base branch 的差異
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(CodeMask/|.github/workflows/)'; then
+                echo "should_test=true" >> $GITHUB_OUTPUT
+              else
+                echo "should_test=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "should_test=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
   test:
-    name: Build and Test
+    name: Build and Test Execution
+    needs: check-changes
+    if: needs.check-changes.outputs.should_test == 'true'
     runs-on: macos-15
     
     steps:
@@ -32,3 +55,24 @@ jobs:
           -enableCodeCoverage YES \
           -skip-testing CodeMaskUITests \
           CODE_SIGNING_ALLOWED=NO
+
+  #這個虛擬任務永遠會執行成功，用來滿足 GitHub 的 Branch Protection 強制要求
+  ci-status:
+    name: Build and Test
+    needs: [check-changes, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report Final Status
+        run: |
+          if [ "${{ needs.check-changes.result }}" != "success" ]; then
+            echo "Check changes job failed"
+            exit 1
+          fi
+          
+          if [ "${{ needs.check-changes.outputs.should_test }}" == "true" ] && [ "${{ needs.test.result }}" != "success" ]; then
+            echo "Tests failed"
+            exit 1
+          fi
+          
+          echo "CI passed (either tested successfully or skipped intentionally)"
