@@ -24,11 +24,13 @@ final class AppStore {
     var session = Session.State()
     var clipboard = Clipboard.State()
     var hud = HUD.State()
+    var guardian = Guardian.State()
     
     // Internal Task Management
     private var maskingTask: Task<Void, Never>?
     private var restorationTask: Task<Void, Never>?
     private var hudAutoHideTask: Task<Void, Never>?
+    private var browserObservationTask: Task<Void, Never>? // Story 2.4 Browser Context Detection
     
     // Track previous permission state to detect changes
     @ObservationIgnored private var previousPermissionState: Security.Permissions.State? = nil
@@ -50,6 +52,18 @@ final class AppStore {
     init(environment: AppEnvironment) {
         self.environment = environment
         session.isStatusKnown = isSafe
+        
+        // Start Browser Context Monitoring (Story 2.4)
+        browserObservationTask = Task { [weak self] in
+            guard let self = self else { return }
+            // Start monitoring
+            self.environment.browserContextDetector.startMonitoring()
+            // Forward events
+            for await action in self.environment.browserContextDetector.events {
+                if Task.isCancelled { break }
+                self.send(.guardian(action))
+            }
+        }
         
         // Initial Rule Load (Story 1.5 readiness + Story 1.7 Mobile Presets)
         Task {
@@ -96,6 +110,9 @@ final class AppStore {
             
         case .hud(let action):
             reduce(hud: action)
+            
+        case .guardian(let action):
+            reduce(guardian: action)
         }
     }
     
@@ -241,7 +258,7 @@ final class AppStore {
             case .success(let masked):
                 // Feedback
                 if masked {
-                    session.hasSecrets = true
+                    updateHasSecrets(true)
                     // Success with masking
                     environment.haptics.play(.generic)
                     environment.audio.playSystemSound(.tink)
@@ -378,6 +395,7 @@ enum AppAction {
     case session(Session.Action)
     case clipboard(Clipboard.Action)
     case hud(HUD.Action)
+    case guardian(Guardian.Action)
 }
 
 enum AppError: Error, Equatable {

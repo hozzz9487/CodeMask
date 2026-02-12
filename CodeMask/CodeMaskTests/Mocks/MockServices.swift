@@ -274,3 +274,39 @@ final class MockKeyboardService: KeyboardServiceProtocol, @unchecked Sendable {
         lock.withLock { _simulatePasteCallCount += 1 }
     }
 }
+
+// MARK: - Mock Browser Context Detector
+
+final class MockBrowserContextDetector: BrowserContextDetectorProtocol, @unchecked Sendable {
+    
+    private let eventStream: AsyncStream<Guardian.Action>
+    private let eventContinuation: AsyncStream<Guardian.Action>.Continuation
+    
+    private let lock = NSLock()
+    private var _isMonitoring = false
+    
+    var isMonitoring: Bool { lock.withLock { _isMonitoring } }
+    
+    var events: AsyncStream<Guardian.Action> { eventStream }
+    
+    init() {
+        let (stream, continuation) = AsyncStream.makeStream(of: Guardian.Action.self)
+        self.eventStream = stream
+        self.eventContinuation = continuation
+    }
+    
+    @MainActor
+    func startMonitoring() {
+        lock.withLock { _isMonitoring = true }
+    }
+    
+    @MainActor
+    func stopMonitoring() {
+        lock.withLock { _isMonitoring = false }
+    }
+    
+    // Test Helper
+    func simulateEvent(_ action: Guardian.Action) {
+        eventContinuation.yield(action)
+    }
+}
