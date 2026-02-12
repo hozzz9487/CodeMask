@@ -14,7 +14,7 @@ final class SessionTests: XCTestCase {
         let uuid = UUID()
         let secureAction = Session.Action.didSecureData(token: uuid)
         let retrieveAction = Session.Action.didRetrieveData(content: "test")
-        let failAction = Session.Action.didFail(AppError.unknown)
+        _ = Session.Action.didFail(AppError.unknown)
         
         // Pattern match to verify structure
         if case .didSecureData(let token) = secureAction {

@@ -20,6 +20,7 @@ struct AppEnvironment {
     var audio: AudioServiceProtocol
     var regexEngine: Clipboard.RegexEngineProtocol
     var keyboard: KeyboardServiceProtocol
+    var browserContextDetector: BrowserContextDetectorProtocol
     
     /// Returns true if the application is currently running within a testing environment (XCTest).
     static var isRunningUnitTests: Bool {
@@ -40,6 +41,7 @@ struct AppEnvironment {
         audio: AudioServiceProtocol = LiveAudioService(),
         regexEngine: Clipboard.RegexEngineProtocol = Clipboard.RegexEngine(),
         keyboard: KeyboardServiceProtocol = LiveKeyboardService(),
+        browserContextDetector: BrowserContextDetectorProtocol = BrowserContextDetector(),
         shouldSuppressAlerts: Bool = ProcessInfo.processInfo.arguments.contains("-suppress-alerts") || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     ) {
         self.permissionsManager = permissionsManager
@@ -50,6 +52,7 @@ struct AppEnvironment {
         self.audio = audio
         self.regexEngine = regexEngine
         self.keyboard = keyboard
+        self.browserContextDetector = browserContextDetector
         self.shouldSuppressAlerts = shouldSuppressAlerts
     }
 }

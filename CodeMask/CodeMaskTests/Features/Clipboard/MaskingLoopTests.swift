@@ -70,7 +70,7 @@ final class MaskingLoopTests: XCTestCase {
         }
         
         // Verify Mocks
-        let written = await mockPasteboard.lastWrittenString
+        let written = mockPasteboard.lastWrittenString
         XCTAssertEqual(written, masked)
         
         let stored = await mockSession.getStoredContent(for: "abc")
@@ -129,7 +129,7 @@ final class MaskingLoopTests: XCTestCase {
         
         // Verify
         // Only B should be written
-        let written = await mockPasteboard.lastWrittenString
+        let written = mockPasteboard.lastWrittenString
         XCTAssertEqual(written, "Masked B")
         
         // Should NOT contain A's secret
