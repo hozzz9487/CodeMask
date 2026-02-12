@@ -35,21 +35,42 @@ Icon?
 # Local logs or debug files
 *.log
 *.tmp
+logs_*/
+
+# Research spikes and prototype code
 Spikes/
 
-# --- AI & Automation Tools (Hidden) ---
-# Hide BMad agent configuration and logs
+# --- Gemini ---
+# Temporary execution files, history, and logs
+# .gemini/tmp/
+# .gemini/logs/
+# .gemini/history/
+.gemini/
+.agent/
+# GEMINI.md
+# *.gemini
+
+# BMad temporary outputs or non-essential artifacts ---
+# _bmad/tmp/
+# _bmad-output/tmp/
 _bmad/
 _bmad-output/
-.agent/
-.codex/
-.gemini/
-GEMINI.md
-*.gemini
-.github/agents/
-logs_*/
 
 # --- Specialized Tools ---
 .env
 *.pem
 *.p12
+
+# --- Codex ---
+# .codex/auth.json
+# .codex/history.jsonl
+# .codex/models_cache.json
+# .codex/sessions/
+# .codex/tmp/
+# .codex/log/
+# .codex/.personality_migration
+# .codex/config.toml
+.codex/
+
+# --- GitHub Agents ---
+.github/agents/
