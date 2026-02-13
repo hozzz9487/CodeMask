@@ -213,7 +213,9 @@ CodeMask/
 │   ├── App/
 │   │   ├── CodeMaskApp.swift (Entry point)
 │   │   ├── AppStore.swift (Central Store)
-│   │   └── AppEnvironment.swift (Dependency Injection)
+│   │   ├── AppEnvironment.swift (Dependency Injection)
+│   │   └── Reducers/ (Isolated feature reducers)
+│   │       └── AppStore+Guardian.swift
 │   ├── Core/
 │   │   ├── Extensions/ (NSPasteboard+, String+, etc.)
 │   │   ├── Security/ (MemoryLocking, Crypto)
@@ -222,7 +224,6 @@ CodeMask/
 │   ├── Features/
 │   │   ├── Clipboard/
 │   │   │   ├── Clipboard.swift (Namespace/State/Action)
-│   │   │   ├── ClipboardMonitor.swift (Actor/Polling)
 │   │   │   └── RegexEngine.swift
 │   │   ├── Session/
 │   │   │   ├── Session.swift (Namespace/State/Action)
@@ -234,7 +235,8 @@ CodeMask/
 │   │   │   └── RuleSet.swift
 │   │   ├── Guardian/
 │   │   │   ├── Guardian.swift (Namespace/State/Action)
-│   │   │   └── ContextObserver.swift (Active Window Detection)
+│   │   │   ├── BrowserContextDetector.swift (Browser Focus Detection)
+│   │   │   └── ClipboardMonitor.swift (Passive Clipboard Polling)
 │   │   └── UI/
 │   │       ├── Components/ (DynamicPill, IconViews)
 │   │       ├── HUD/ (NSPanel Controller, HUDView)
@@ -247,8 +249,9 @@ CodeMask/
     ├── Features/
     │   ├── Clipboard/
     │   ├── Session/
-    │   └── Profiles/
-    └── Mocks/ (MockClipboardService.swift)
+    │   ├── Profiles/
+    │   └── Guardian/
+    └── Mocks/ (MockClipboardService.swift, MockBrowserContextDetector.swift)
 ```
 
 ### Architectural Boundaries
